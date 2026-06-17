@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>FleteYa — Cotizá tu mudanza al instante</title>
+  <meta name="description" content="Cotizá tu flete o mudanza en segundos. Seleccioná tus muebles, ingresá las direcciones y recibí un presupuesto instantáneo en WhatsApp." />
+
+  <!-- Google Fonts: Sora (display) + Space Mono (números) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sora: ['Sora', 'sans-serif'],
+            mono: ['Space Mono', 'monospace'],
+          },
+          colors: {
+            carbon:  { DEFAULT: '#0e0e10', 50: '#1a1a1f', 100: '#141418', 200: '#0e0e10' },
+            surface: { DEFAULT: '#18181c', light: '#222228', border: '#2e2e38' },
+          },
+          boxShadow: {
+            'glow-amber':   '0 0 20px rgba(251,191,36,0.25)',
+            'glow-emerald': '0 0 20px rgba(52,211,153,0.30)',
+          },
+          keyframes: {
+            'pop-in': {
+              '0%':   { transform: 'scale(0.85)', opacity: '0' },
+              '60%':  { transform: 'scale(1.06)' },
+              '100%': { transform: 'scale(1)',    opacity: '1' },
+            },
+            'slide-up': {
+              '0%':   { transform: 'translateY(16px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)',    opacity: '1' },
+            },
+          },
+          animation: {
+            'pop-in':   'pop-in 0.28s ease forwards',
+            'slide-up': 'slide-up 0.35s ease forwards',
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    /* ── Base & scrollbar ─────────────────────────────────── */
+    * { -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Sora', sans-serif; background: #0e0e10; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #0e0e10; }
+    ::-webkit-scrollbar-thumb { background: #2e2e38; border-radius: 4px; }
+
+    /* ── Glassmorphism cards ──────────────────────────────── */
+    .glass-card {
+      background: rgba(34, 34, 40, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+
+    /* ── Custom input styling ─────────────────────────────── */
+    .input-custom {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.09);
+      color: #fff;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .input-custom::placeholder { color: #4b5563; }
+    .input-custom:focus {
+      outline: none;
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+    }
+
+    /* ── Quantity btn micro-anim ──────────────────────────── */
+    .qty-btn { transition: transform 0.1s ease, background 0.15s; user-select: none; }
+    .qty-btn:active { transform: scale(0.85); }
+
+    /* ── Item card active state ───────────────────────────── */
+    .item-card { transition: border-color 0.2s, box-shadow 0.2s; }
+    .item-card.has-items {
+      border-color: rgba(251,191,36,0.40) !important;
+      box-shadow: 0 0 16px rgba(251,191,36,0.10);
+    }
+
+    /* ── WhatsApp btn ─────────────────────────────────────── */
+    .btn-wsp {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      transition: transform 0.15s ease, box-shadow 0.2s ease;
+    }
+    .btn-wsp:active { transform: scale(0.96); }
+    .btn-wsp:hover  { box-shadow: 0 0 28px rgba(16,185,129,0.50); }
+
+    /* ── Sticky footer gradient mask ──────────────────────── */
+    .sticky-footer { background: linear-gradient(to top, #0e0e10 72%, transparent); }
+
+    /* ── Alert pop-in ─────────────────────────────────────── */
+    .alert-card { animation: pop-in 0.25s ease forwards; }
+
+    /* ── Space Mono para números ──────────────────────────── */
+    .mono { font-family: 'Space Mono', monospace; }
+
+    /* ── Mesh ambient light ───────────────────────────────── */
+    .bg-mesh {
+      background-image:
+        radial-gradient(at 18% 12%, rgba(245,158,11,0.08) 0px, transparent 52%),
+        radial-gradient(at 82% 82%, rgba(16,185,129,0.06) 0px, transparent 52%);
+    }
+  </style>
+</head>
+
+<body class="bg-[#0e0e10] text-white min-h-screen bg-mesh">
+
+<!-- ═══════════════════════════════════════════════════
+     ALERT MODAL CUSTOM (reemplaza window.alert)
+══════════════════════════════════════════════════════ -->
+<div id="alertModal"
+     class="fixed inset-0 z-50 flex items-center justify-center p-6 hidden"
+     style="background: rgba(0,0,0,0.72); backdrop-filter: blur(6px);">
+  <div class="alert-card glass-card rounded-2xl p-6 max-w-sm w-full text-center space-y-4">
+    <div id="alertIcon" class="text-4xl">⚠️</div>
+    <p id="alertMsg" class="text-slate-200 text-sm leading-relaxed font-medium whitespace-pre-line"></p>
+    <button onclick="closeAlert()"
+            class="w-full py-3 rounded-xl font-bold text-sm tracking-wide transition-colors"
+            style="background:#f59e0b; color:#000;">
+      Entendido
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MAIN CONTENT
+══════════════════════════════════════════════════════ -->
+<div class="max-w-md mx-auto px-4 pt-10 pb-72">
+
+  <!-- ── HEADER ─────────────────────────────────────── -->
+  <header class="mb-8" style="animation: slide-up 0.4s ease both;">
+    <div class="flex items-center gap-3 mb-3">
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+           style="background: #f59e0b; box-shadow: 0 0 18px rgba(245,158,11,0.35);">
+        🚛
+      </div>
+      <span class="text-xs font-bold tracking-[0.22em] uppercase" style="color:#f59e0b;">FleteYa</span>
+    </div>
+    <h1 class="text-[2rem] font-extrabold leading-tight text-white">
+      Cotizá tu mudanza<br/>
+      <span style="color:#f59e0b;">al instante</span>
+    </h1>
+    <p class="text-sm mt-2 font-light" style="color:#64748b;">
+      Seleccioná tus objetos, ingresá las direcciones<br/>y enviá el presupuesto por WhatsApp.
+    </p>
+  </header>
+
+  <!-- ── SECCIÓN: DIRECCIONES ───────────────────────── -->
+  <section class="glass-card rounded-2xl p-5 mb-5 space-y-4"
+           style="animation: slide-up 0.4s ease 0.07s both;">
+    <h2 class="text-xs font-bold tracking-[0.18em] uppercase flex items-center gap-2"
+        style="color:#64748b;">
+      <span>📍</span> Direcciones
+    </h2>
+
+    <!-- Origen -->
+    <div class="space-y-1.5">
+      <label for="origen"
+             class="text-xs font-bold uppercase tracking-widest block"
+             style="color:#4b5563;">Origen</label>
+      <input id="origen" type="text"
+             placeholder="Ej: Av. Corrientes 1234, CABA"
+             class="input-custom w-full rounded-xl px-4 py-3.5 text-sm font-light"
+             autocomplete="street-address" />
+    </div>
+
+    <!-- Destino -->
+    <div class="space-y-1.5">
+      <label for="destino"
+             class="text-xs font-bold uppercase tracking-widest block"
+             style="color:#4b5563;">Destino</label>
+      <input id="destino" type="text"
+             placeholder="Ej: San Martín 456, Rosario"
+             class="input-custom w-full rounded-xl px-4 py-3.5 text-sm font-light"
+             autocomplete="street-address" />
+    </div>
+  </section>
+
+  <!-- ── SECCIÓN: INVENTARIO ────────────────────────── -->
+  <section style="animation: slide-up 0.4s ease 0.14s both;">
+    <h2 class="text-xs font-bold tracking-[0.18em] uppercase flex items-center gap-2 mb-3"
+        style="color:#64748b;">
+      <span>📦</span> ¿Qué llevás?
+    </h2>
+
+    <!-- Las tarjetas se inyectan desde JS -->
+    <div id="itemList" class="space-y-3"></div>
+  </section>
+
+</div><!-- /main content -->
+
+<!-- ═══════════════════════════════════════════════════
+     STICKY FOOTER — RESUMEN + BOTÓN WhatsApp
+══════════════════════════════════════════════════════ -->
+<div class="fixed bottom-0 left-0 right-0 z-40 sticky-footer pt-10 pb-6 px-4">
+  <div class="max-w-md mx-auto space-y-3">
+
+    <!-- Resumen numérico -->
+    <div class="glass-card rounded-2xl px-5 py-4 flex items-center justify-between">
+
+      <!-- Volumen total -->
+      <div class="text-center">
+        <p class="text-[10px] font-bold uppercase tracking-widest mb-0.5" style="color:#475569;">Volumen</p>
+        <p id="totalVolumen" class="mono text-xl font-bold" style="color:#f59e0b;">
+          0.00 <span class="text-xs font-normal" style="color:#64748b;">m³</span>
+        </p>
+      </div>
+
+      <div class="w-px h-10" style="background:rgba(255,255,255,0.08);"></div>
+
+      <!-- Precio estimado -->
+      <div class="text-center">
+        <p class="text-[10px] font-bold uppercase tracking-widest mb-0.5" style="color:#475569;">Estimado</p>
+        <p id="totalPrecio" class="mono text-xl font-bold" style="color:#34d399;">$0</p>
+      </div>
+
+      <div class="w-px h-10" style="background:rgba(255,255,255,0.08);"></div>
+
+      <!-- Cantidad de ítems -->
+      <div class="text-center">
+        <p class="text-[10px] font-bold uppercase tracking-widest mb-0.5" style="color:#475569;">Objetos</p>
+        <p id="totalItems" class="mono text-xl font-bold text-white">0</p>
+      </div>
+    </div>
+
+    <!-- Botón WhatsApp -->
+    <button id="btnWhatsapp"
+            onclick="enviarWhatsApp()"
+            class="btn-wsp w-full rounded-2xl py-4 flex items-center justify-center gap-3 font-bold text-white text-base"
+            aria-label="Confirmar pedido y enviar por WhatsApp">
+      <!-- Ícono WhatsApp SVG -->
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="white">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+      </svg>
+      Confirmar y Enviar a WhatsApp
+    </button>
+
+    <!-- Disclaimer -->
+    <p class="text-center text-[11px] font-light" style="color:#374151;">
+      Precio estimado · Sin compromiso · Sujeto a confirmación del fletero
+    </p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════ -->
+<script>
+/* ─────────────────────────────────────────────────────────────────
+   ⚙️  CONFIGURACIÓN DEL FLETERO
+   Editá solo este bloque para personalizar tarifas y teléfono.
+───────────────────────────────────────────────────────────────── */
+const CONFIG = {
+  PRECIO_BASE:      15000,          // Costo fijo de arranque (ARS)
+  PRECIO_POR_M3:    8000,           // Precio por m³ de volumen (ARS)
+  TELEFONO_DESTINO: '5491120401113' // WhatsApp destino (sin + ni espacios)
+};
+
+/* ─────────────────────────────────────────────────────────────────
+   📦  CATÁLOGO DE OBJETOS — { id, emoji, nombre, m3 }
+───────────────────────────────────────────────────────────────── */
+const CATALOGO = [
+  { id: 'heladera',   emoji: '🧊', nombre: 'Heladera con Freezer',     m3: 1.20 },
+  { id: 'sillon',     emoji: '🛋️', nombre: 'Sillón 2 Cuerpos',         m3: 1.50 },
+  { id: 'lavarropas', emoji: '🌀', nombre: 'Lavarropas / Secarropas',  m3: 0.60 },
+  { id: 'cama',       emoji: '🛏️', nombre: 'Cama 2 Plazas',            m3: 2.00 },
+  { id: 'mesa',       emoji: '🪑', nombre: 'Mesa de Comedor + Sillas', m3: 1.20 },
+  { id: 'cocina',     emoji: '🍳', nombre: 'Cocina / Horno',           m3: 0.60 },
+  { id: 'cajas',      emoji: '📦', nombre: 'Cajas Medianas / Grandes', m3: 0.15 },
+];
+
+/* ─────────────────────────────────────────────────────────────────
+   🗂️  ESTADO — cantidades por item (reactive-lite)
+───────────────────────────────────────────────────────────────── */
+const estado = {};
+CATALOGO.forEach(item => { estado[item.id] = 0; });
+
+/* ─────────────────────────────────────────────────────────────────
+   🎨  RENDERIZADO DE TARJETAS DE INVENTARIO
+───────────────────────────────────────────────────────────────── */
+function renderCatalogo() {
+  const container = document.getElementById('itemList');
+
+  CATALOGO.forEach((item, i) => {
+    const card = document.createElement('div');
+    card.id        = `card-${item.id}`;
+    card.className = 'item-card glass-card rounded-2xl p-4 flex items-center gap-3';
+    card.style.cssText = `animation: slide-up 0.35s ease ${0.15 + i * 0.05}s both;`;
+
+    card.innerHTML = `
+      <!-- Emoji icono -->
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+           style="background:rgba(255,255,255,0.05);">${item.emoji}</div>
+
+      <!-- Nombre + volumen -->
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold text-white leading-snug">${item.nombre}</p>
+        <p class="mono text-xs mt-0.5" style="color:#64748b;">${item.m3.toFixed(2)} m³ / unidad</p>
+      </div>
+
+      <!-- Control +/- -->
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <!-- Botón restar -->
+        <button onclick="cambiarCantidad('${item.id}', -1)"
+                class="qty-btn w-10 h-10 rounded-xl font-bold text-xl flex items-center justify-center"
+                style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.10); color:#94a3b8;"
+                aria-label="Restar ${item.nombre}">−</button>
+
+        <!-- Cantidad -->
+        <span id="qty-${item.id}"
+              class="mono text-base font-bold w-5 text-center select-none"
+              style="color:#f59e0b;">0</span>
+
+        <!-- Botón sumar -->
+        <button onclick="cambiarCantidad('${item.id}', 1)"
+                class="qty-btn w-10 h-10 rounded-xl font-bold text-xl flex items-center justify-center"
+                style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.28); color:#f59e0b;"
+                aria-label="Sumar ${item.nombre}">+</button>
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   ➕➖  LÓGICA DE CAMBIO DE CANTIDAD
+───────────────────────────────────────────────────────────────── */
+function cambiarCantidad(id, delta) {
+  const nuevo = Math.max(0, estado[id] + delta);
+  estado[id]  = nuevo;
+
+  // Actualizar número en pantalla con micro-animación
+  const qtyEl = document.getElementById(`qty-${id}`);
+  if (qtyEl) {
+    qtyEl.textContent = nuevo;
+    qtyEl.style.animation = 'none';
+    void qtyEl.offsetWidth; // forzar reflow
+    qtyEl.style.animation = 'pop-in 0.25s ease';
+  }
+
+  // Resaltar tarjeta si tiene ítems seleccionados
+  const card = document.getElementById(`card-${id}`);
+  if (card) card.classList.toggle('has-items', nuevo > 0);
+
+  actualizarTotales();
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   💰  CÁLCULO EN TIEMPO REAL
+   Fórmula: Precio Base + (Volumen Total × Precio por m³)
+───────────────────────────────────────────────────────────────── */
+function actualizarTotales() {
+  let volumen = 0;
+  let items   = 0;
+
+  CATALOGO.forEach(item => {
+    const q = estado[item.id];
+    volumen += item.m3 * q;
+    items   += q;
+  });
+
+  const precio = CONFIG.PRECIO_BASE + (volumen * CONFIG.PRECIO_POR_M3);
+
+  // Mostrar precio solo cuando hay items (si no, mostrar base)
+  const precioMostrar = items > 0 ? precio : CONFIG.PRECIO_BASE;
+
+  document.getElementById('totalVolumen').innerHTML =
+    `<span class="mono text-xl font-bold" style="color:#f59e0b;">${volumen.toFixed(2)}</span>` +
+    ` <span class="text-xs font-normal" style="color:#64748b;">m³</span>`;
+
+  document.getElementById('totalPrecio').textContent =
+    `$${formatearPesos(Math.round(precioMostrar))}`;
+
+  document.getElementById('totalItems').textContent = items;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   🔢  FORMATEADOR DE PESOS ARGENTINOS (separador de miles)
+───────────────────────────────────────────────────────────────── */
+function formatearPesos(numero) {
+  return numero.toLocaleString('es-AR');
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   📲  ACCIÓN PRINCIPAL: GENERAR ENLACE Y ABRIR WHATSAPP
+───────────────────────────────────────────────────────────────── */
+function enviarWhatsApp() {
+  const origen  = document.getElementById('origen').value.trim();
+  const destino = document.getElementById('destino').value.trim();
+
+  // --- Validaciones ---
+  if (!origen) {
+    showAlert('📍', 'Por favor completá la\nDirección de Origen antes de continuar.');
+    return;
+  }
+  if (!destino) {
+    showAlert('🏁', 'Por favor completá la\nDirección de Destino antes de continuar.');
+    return;
+  }
+
+  // Calcular volumen e ítems
+  let volumen = 0;
+  let items   = 0;
+  const lineas = [];
+
+  CATALOGO.forEach(item => {
+    const q = estado[item.id];
+    if (q > 0) {
+      volumen += item.m3 * q;
+      items   += q;
+      lineas.push(`- ${q}x ${item.nombre}`);
+    }
+  });
+
+  if (items === 0) {
+    showAlert('📦', 'Aún no agregaste ningún objeto.\nSeleccioná al menos uno para continuar.');
+    return;
+  }
+
+  const precio = CONFIG.PRECIO_BASE + (volumen * CONFIG.PRECIO_POR_M3);
+
+  // --- Construcción del mensaje ---
+  const mensaje = [
+    '¡Hola! Quiero consultar por un flete/mudanza.',
+    '',
+    `📍 Origen: ${origen}`,
+    `🏁 Destino: ${destino}`,
+    '',
+    '📦 Detalle de lo que llevo:',
+    ...lineas,
+    '',
+    `📐 Espacio estimado: ${volumen.toFixed(2)} m³`,
+    `💵 Precio estimado del viaje: $${formatearPesos(Math.round(precio))}`,
+    '',
+    '¿Tienen disponibilidad para estos días?',
+  ].join('\n');
+
+  const url = `https://wa.me/${CONFIG.TELEFONO_DESTINO}?text=${encodeURIComponent(mensaje)}`;
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   🔔  SISTEMA DE ALERTA CUSTOM (reemplaza window.alert nativo)
+───────────────────────────────────────────────────────────────── */
+function showAlert(icon, mensaje) {
+  document.getElementById('alertIcon').textContent = icon;
+  document.getElementById('alertMsg').textContent  = mensaje;
+  const modal = document.getElementById('alertModal');
+  // Resetear animación para re-trigger
+  const card = modal.querySelector('.alert-card');
+  card.style.animation = 'none';
+  void card.offsetWidth;
+  card.style.animation = '';
+  modal.classList.remove('hidden');
+}
+
+function closeAlert() {
+  document.getElementById('alertModal').classList.add('hidden');
+}
+
+// Cerrar al tocar el fondo oscuro
+document.getElementById('alertModal').addEventListener('click', function(e) {
+  if (e.target === this) closeAlert();
+});
+
+/* ─────────────────────────────────────────────────────────────────
+   🚀  INIT
+───────────────────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  renderCatalogo();
+  actualizarTotales();
+});
+</script>
+</body>
+</html>
