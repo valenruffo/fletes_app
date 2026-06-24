@@ -290,9 +290,9 @@
           <svg class="cs-arrow w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
         </div>
         <div class="cs-dropdown">
-          <div class="cs-option selected" data-value="0" data-target="peones" onclick="selectCS(this)">Sin peón — Solo chofer</div>
-          <div class="cs-option"          data-value="1" data-target="peones" onclick="selectCS(this)">1 Peón adicional &nbsp;·&nbsp; <span style="color:#f59e0b;">+$12.000</span></div>
-          <div class="cs-option"          data-value="2" data-target="peones" onclick="selectCS(this)">2 Peones adicionales &nbsp;·&nbsp; <span style="color:#f59e0b;">+$22.000</span></div>
+          <div class="cs-option selected" data-value="0" data-target="peones" data-label="Sin peón" onclick="selectCS(this)">Sin peón — Solo chofer</div>
+          <div class="cs-option"          data-value="1" data-target="peones" data-label="1 Peón (+$12.000)" onclick="selectCS(this)">1 Peón adicional &nbsp;·&nbsp; <span style="color:#f59e0b;">+$12.000</span></div>
+          <div class="cs-option"          data-value="2" data-target="peones" data-label="2 Peones (+$22.000)" onclick="selectCS(this)">2 Peones adicionales &nbsp;·&nbsp; <span style="color:#f59e0b;">+$22.000</span></div>
         </div>
       </div>
     </div>
@@ -699,34 +699,34 @@ function enviarWhatsApp() {
 
   // --- Detalles del servicio ---
   const lineasServicio = [
-    `📅 Fecha/Hora: ${dia} a las ${horaVal.toString().padStart(2, '0')}:00 hs` + (esNocturno ? ' 🌙 (Recargo nocturno)' : ''),
-    `👥 Asistencia: ${peones === 0 ? 'Sin peón (Solo chofer)' : peones === 1 ? '1 Peón' : '2 Peones'}`
+    `◆ Fecha/Hora: ${dia} a las ${horaVal.toString().padStart(2, '0')}:00 hs` + (esNocturno ? ' (Recargo nocturno)' : ''),
+    `◆ Asistencia: ${peones === 0 ? 'Sin peon (Solo chofer)' : peones === 1 ? '1 Peon (+$' + formatearPesos(CONFIG.PRECIO_1_PEON) + ')' : '2 Peones (+$' + formatearPesos(CONFIG.PRECIO_2_PEONES) + ')'}`
   ];
 
-  // --- Líneas opcionales de distancia ---
+  // --- Lineas opcionales de distancia ---
   if (kmInput > 0) {
     if (kmExtra > 0) {
-      lineasServicio.push(`🛣️ Distancia: ${kmInput} km (${kmExtra} km extra · +$${formatearPesos(recargoKm)})`);
+      lineasServicio.push(`◆ Distancia: ${kmInput} km (${kmExtra} km extra · +$${formatearPesos(recargoKm)})`);
     } else {
-      lineasServicio.push(`🛣️ Distancia: ${kmInput} km (Dentro de franquicia de ${CONFIG.KM_FRANQUICIA} km)`);
+      lineasServicio.push(`◆ Distancia: ${kmInput} km (Dentro de franquicia de ${CONFIG.KM_FRANQUICIA} km)`);
     }
   }
 
-  // --- Construcción del mensaje ---
+  // --- Construccion del mensaje ---
   const mensaje = [
-    '¡Hola! Quiero consultar por un flete/mudanza.',
+    '!Hola! Quiero consultar por un flete/mudanza.',
     '',
-    `📍 Origen: ${origen}`,
-    `🏁 Destino: ${destino}`,
+    `◆ Origen: ${origen}`,
+    `◆ Destino: ${destino}`,
     ...lineasServicio,
     '',
-    '📦 Detalle de lo que llevo:',
+    '◆ Detalle de lo que llevo:',
     ...lineas,
     '',
-    `📐 Espacio estimado: ${volumen.toFixed(2)} m³`,
-    `💵 Precio estimado del viaje: $${formatearPesos(Math.round(precio))}`,
+    `◆ Espacio estimado: ${volumen.toFixed(2)} m3`,
+    `◆ Precio estimado del viaje: $${formatearPesos(Math.round(precio))}`,
     '',
-    '¿Tienen disponibilidad para estos días?',
+    '?Tienen disponibilidad para estos dias?',
   ].join('\n');
 
   const url = `https://wa.me/${CONFIG.TELEFONO_DESTINO}?text=${encodeURIComponent(mensaje)}`;
@@ -806,8 +806,9 @@ function selectCS(option) {
   // Actualizar input oculto
   document.getElementById(targetId).value = value;
 
-  // Actualizar label visible (textContent limpio, sin HTML hijo)
-  trigger.querySelector('.cs-label').textContent = option.textContent.trim();
+  // Actualizar label visible (data-label si existe, sino textContent)
+  trigger.querySelector('.cs-label').textContent =
+    option.dataset.label || option.textContent.trim();
 
   // Marcar seleccionado
   dropdown.querySelectorAll('.cs-option').forEach(o => o.classList.remove('selected'));
