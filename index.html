@@ -341,10 +341,10 @@
              style="color:#4b5563;">📏 Distancia estimada (km)</label>
       <div class="flex items-center gap-2">
         <!-- Botón restar -->
-        <button onclick="cambiarKm(-5)"
+        <button onclick="cambiarKm(-1)"
                 class="qty-btn w-12 h-12 rounded-xl font-bold text-xl flex items-center justify-center flex-shrink-0"
                 style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.10); color:#94a3b8;"
-                aria-label="Restar 5 km">−</button>
+                aria-label="Restar 1 km">−</button>
 
         <!-- Input numérico centrado sin spinner -->
         <div class="relative flex-1">
@@ -358,10 +358,10 @@
         </div>
 
         <!-- Botón sumar -->
-        <button onclick="cambiarKm(5)"
+        <button onclick="cambiarKm(1)"
                 class="qty-btn w-12 h-12 rounded-xl font-bold text-xl flex items-center justify-center flex-shrink-0"
                 style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.28); color:#f59e0b;"
-                aria-label="Sumar 5 km">+</button>
+                aria-label="Sumar 1 km">+</button>
       </div>
       <!-- Badge de recargo — se muestra solo si supera la franquicia -->
       <div id="kmBadge" class="hidden items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold"
@@ -758,41 +758,62 @@ document.getElementById('alertModal').addEventListener('click', function(e) {
 });
 
 /* ─────────────────────────────────────────────────────────────────
-   🔽  CUSTOM SELECT — toggleCS / selectCS
+   🔽  CUSTOM SELECT — Portal pattern
+   Los dropdowns se mueven al <body> para escapar el stacking context
+   creado por backdrop-filter en las glass-cards.
 ───────────────────────────────────────────────────────────────── */
+let _portalDropdown = null; // dropdown actualmente en body
+let _portalWrapper  = null; // cs-wrapper original del que salió
+
 function toggleCS(trigger) {
-  const dropdown = trigger.nextElementSibling;
+  const wrapper  = trigger.parentElement; // .cs-wrapper
+  const dropdown = wrapper.querySelector('.cs-dropdown');
   const isOpen   = trigger.classList.contains('open');
 
-  // Cerrar todos primero
-  closeAllCS();
+  closeAllCS(); // cierra y devuelve al DOM original
+  if (isOpen) return;
 
-  if (!isOpen) {
-    trigger.classList.add('open');
-    dropdown.style.display = 'block';
-    // Pequeño reflow para animar
-    void dropdown.offsetWidth;
-    dropdown.classList.add('open');
-  }
+  // Calcular posición en viewport
+  const rect = trigger.getBoundingClientRect();
+
+  // Aplicar estilos fixed antes de mover al body
+  dropdown.style.position = 'fixed';
+  dropdown.style.top      = (rect.bottom + 4) + 'px';
+  dropdown.style.left     = rect.left + 'px';
+  dropdown.style.width    = rect.width + 'px';
+  dropdown.style.zIndex   = '9999';
+
+  // Mover al body (escapa el stacking context del glass-card)
+  document.body.appendChild(dropdown);
+  _portalDropdown = dropdown;
+  _portalWrapper  = wrapper;
+
+  trigger.classList.add('open');
+  dropdown.style.display = 'block';
+  void dropdown.offsetWidth; // reflow para animar
+  dropdown.classList.add('open');
 }
 
 function selectCS(option) {
   const value    = option.dataset.value;
   const targetId = option.dataset.target;
   const dropdown = option.closest('.cs-dropdown');
-  const trigger  = dropdown.previousElementSibling;
+
+  // Encontrar el trigger: si el dropdown está en body, usar _portalWrapper
+  const wrapper = _portalWrapper || dropdown.closest('.cs-wrapper');
+  const trigger = wrapper.querySelector('.cs-trigger');
 
   // Actualizar input oculto
   document.getElementById(targetId).value = value;
 
-  // Actualizar label visible (texto limpio sin hijos HTML)
+  // Actualizar label visible (textContent limpio, sin HTML hijo)
   trigger.querySelector('.cs-label').textContent = option.textContent.trim();
 
   // Marcar seleccionado
   dropdown.querySelectorAll('.cs-option').forEach(o => o.classList.remove('selected'));
   option.classList.add('selected');
 
-  // Cerrar
+  // Cerrar y devolver al DOM
   closeAllCS();
 
   // Recalcular
@@ -800,16 +821,28 @@ function selectCS(option) {
 }
 
 function closeAllCS() {
+  // Devolver dropdown portal al wrapper original
+  if (_portalDropdown && _portalWrapper) {
+    _portalDropdown.style.position = '';
+    _portalDropdown.style.top      = '';
+    _portalDropdown.style.left     = '';
+    _portalDropdown.style.width    = '';
+    _portalDropdown.style.zIndex   = '';
+    _portalDropdown.style.display  = 'none';
+    _portalDropdown.classList.remove('open');
+    _portalWrapper.appendChild(_portalDropdown); // re-adjuntar
+    _portalDropdown = null;
+    _portalWrapper  = null;
+  }
   document.querySelectorAll('.cs-trigger').forEach(t => t.classList.remove('open'));
-  document.querySelectorAll('.cs-dropdown').forEach(d => {
-    d.classList.remove('open');
-    d.style.display = 'none';
-  });
 }
 
-// Cerrar al tocar fuera
+// Cerrar al tocar fuera de cualquier cs-wrapper o portal
 document.addEventListener('click', e => {
-  if (!e.target.closest('.cs-wrapper')) closeAllCS();
+  if (
+    !e.target.closest('.cs-wrapper') &&
+    !e.target.closest('.cs-dropdown')
+  ) closeAllCS();
 });
 
 /* ─────────────────────────────────────────────────────────────────
