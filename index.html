@@ -158,6 +158,73 @@
     </p>
   </header>
 
+  <!-- ── SECCIÓN: FECHA, HORA Y PEONES ───────────────── -->
+  <section class="glass-card rounded-2xl p-5 mb-5 space-y-4 animate-slide-up"
+           style="animation-delay: 0.04s;">
+    <h2 class="text-xs font-bold tracking-[0.18em] uppercase flex items-center gap-2"
+        style="color:#64748b;">
+      <span>📅</span> Programación y Peones
+    </h2>
+
+    <div class="grid grid-cols-2 gap-3">
+      <!-- Día de la semana -->
+      <div class="space-y-1.5">
+        <label for="diaSemana" class="text-xs font-bold uppercase tracking-widest block" style="color:#4b5563;">Día</label>
+        <select id="diaSemana" onchange="actualizarTotales()" class="input-custom w-full rounded-xl px-3 py-3 text-sm font-light">
+          <option value="Lunes">Lunes</option>
+          <option value="Martes">Martes</option>
+          <option value="Miércoles">Miércoles</option>
+          <option value="Jueves">Jueves</option>
+          <option value="Viernes">Viernes</option>
+          <option value="Sábado">Sábado</option>
+          <option value="Domingo">Domingo</option>
+        </select>
+      </div>
+
+      <!-- Hora aproximada -->
+      <div class="space-y-1.5">
+        <label for="horaServicio" class="text-xs font-bold uppercase tracking-widest block" style="color:#4b5563;">Hora</label>
+        <select id="horaServicio" onchange="actualizarTotales()" class="input-custom w-full rounded-xl px-3 py-3 text-sm font-light">
+          <!-- Generado de 6am a 22h -->
+          <option value="6">06:00 hs</option>
+          <option value="7">07:00 hs</option>
+          <option value="8">08:00 hs</option>
+          <option value="9">09:00 hs</option>
+          <option value="10">10:00 hs</option>
+          <option value="11">11:00 hs</option>
+          <option value="12">12:00 hs</option>
+          <option value="13">13:00 hs</option>
+          <option value="14">14:00 hs</option>
+          <option value="15">15:00 hs</option>
+          <option value="16">16:00 hs</option>
+          <option value="17">17:00 hs</option>
+          <option value="18">18:00 hs</option>
+          <option value="19">19:00 hs</option>
+          <option value="20">20:00 hs (Nocturno)</option>
+          <option value="21">21:00 hs (Nocturno)</option>
+          <option value="22">22:00 hs (Nocturno)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Selección de Peones -->
+    <div class="space-y-1.5">
+      <label for="peones" class="text-xs font-bold uppercase tracking-widest block" style="color:#4b5563;">Asistencia (Peones)</label>
+      <select id="peones" onchange="actualizarTotales()" class="input-custom w-full rounded-xl px-4 py-3 text-sm font-light">
+        <option value="0">Sin peón (Solo chofer)</option>
+        <option value="1">1 Peón adicional (+$12.000)</option>
+        <option value="2">2 Peones adicionales (+$22.000)</option>
+      </select>
+    </div>
+
+    <!-- Badge de recargo nocturno -->
+    <div id="nocturnoBadge" class="hidden items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold"
+         style="background:rgba(245,158,11,0.10); border:1px solid rgba(245,158,11,0.25); color:#f59e0b;">
+      <span>🌙</span>
+      <span>Recargo nocturno del 20% aplicado (20:00 a 22:00 hs)</span>
+    </div>
+  </section>
+
   <!-- ── SECCIÓN: DIRECCIONES ───────────────────────── -->
   <section class="glass-card rounded-2xl p-5 mb-5 space-y-4"
            style="animation: slide-up 0.4s ease 0.07s both;">
@@ -290,6 +357,12 @@ const CONFIG = {
   PRECIO_POR_M3:    8000,           // Precio por m³ de volumen (ARS)
   KM_FRANQUICIA:    40,             // Km incluidos sin costo extra
   PRECIO_POR_KM:    600,            // Precio por cada km adicional (ARS)
+  // --- Nuevas Tarifas de Peones ---
+  PRECIO_1_PEON:    12000,          // Adicional por 1 peón (ARS)
+  PRECIO_2_PEONES:  22000,          // Adicional por 2 peones (ARS)
+  // --- Horarios y Recargo Nocturno ---
+  HORA_INICIO_NOCTURNO: 20,         // A partir de qué hora (en 24h) aplica recargo nocturno
+  PORCENTAJE_RECARGO_NOCTURNO: 0.20, // 20% de recargo sobre el costo de viaje (base + m3 + km)
   TELEFONO_DESTINO: '5491154935149' // WhatsApp destino (sin + ni espacios)
 };
 
@@ -385,8 +458,7 @@ function cambiarCantidad(id, delta) {
 
 /* ─────────────────────────────────────────────────────────────────
    💰  CÁLCULO EN TIEMPO REAL
-   Fórmula: Precio Base + (Volumen Total × Precio por m³) + recargo km
-   Recargo km: max(0, km - KM_FRANQUICIA) × PRECIO_POR_KM
+   Fórmula: (Precio Base + (Volumen × Precio m³) + recargo km) * (1 + recargo nocturno) + costo peones
 ───────────────────────────────────────────────────────────────── */
 function actualizarTotales() {
   let volumen = 0;
@@ -398,15 +470,39 @@ function actualizarTotales() {
     items   += q;
   });
 
-  // Kilómetros ingresados
+  // 1. Kilómetros ingresados y recargo
   const kmInput   = parseFloat(document.getElementById('kilometros').value) || 0;
   const kmExtra   = Math.max(0, kmInput - CONFIG.KM_FRANQUICIA);
   const recargoKm = kmExtra * CONFIG.PRECIO_POR_KM;
 
-  const precio = CONFIG.PRECIO_BASE + (volumen * CONFIG.PRECIO_POR_M3) + recargoKm;
+  // Costo base viaje
+  let costoViaje = CONFIG.PRECIO_BASE + (volumen * CONFIG.PRECIO_POR_M3) + recargoKm;
 
-  // Precio base si aún no hay items ni km
-  const precioMostrar = (items > 0 || kmInput > 0) ? precio : CONFIG.PRECIO_BASE;
+  // 2. Recargo nocturno (20% sobre costo viaje)
+  const horaSeleccionada = parseInt(document.getElementById('horaServicio').value) || 6;
+  let recargoNocturno = 0;
+  const badgeNocturno = document.getElementById('nocturnoBadge');
+
+  if (horaSeleccionada >= CONFIG.HORA_INICIO_NOCTURNO) {
+    recargoNocturno = costoViaje * CONFIG.PORCENTAJE_RECARGO_NOCTURNO;
+    badgeNocturno.classList.remove('hidden');
+    badgeNocturno.classList.add('flex');
+  } else {
+    badgeNocturno.classList.add('hidden');
+    badgeNocturno.classList.remove('flex');
+  }
+
+  // 3. Peones
+  const cantPeones = parseInt(document.getElementById('peones').value) || 0;
+  let costoPeones = 0;
+  if (cantPeones === 1) costoPeones = CONFIG.PRECIO_1_PEON;
+  if (cantPeones === 2) costoPeones = CONFIG.PRECIO_2_PEONES;
+
+  // Costo total
+  const precio = costoViaje + recargoNocturno + costoPeones;
+
+  // Precio a mostrar (solo si hay interacción)
+  const precioMostrar = (items > 0 || kmInput > 0 || cantPeones > 0) ? precio : CONFIG.PRECIO_BASE;
 
   // ── Actualizar DOM ──────────────────────────────────────
   document.getElementById('totalVolumen').innerHTML =
@@ -426,7 +522,7 @@ function actualizarTotales() {
     kmExtraEl.style.color = '#94a3b8';
   }
 
-  // Badge de recargo bajo el input
+  // Badge de recargo bajo el input de Kms
   const badge     = document.getElementById('kmBadge');
   const badgeText = document.getElementById('kmBadgeText');
   if (kmExtra > 0) {
@@ -454,6 +550,9 @@ function enviarWhatsApp() {
   const origen  = document.getElementById('origen').value.trim();
   const destino = document.getElementById('destino').value.trim();
   const kmInput = parseFloat(document.getElementById('kilometros').value) || 0;
+  const dia     = document.getElementById('diaSemana').value;
+  const horaVal = parseInt(document.getElementById('horaServicio').value) || 6;
+  const peones  = parseInt(document.getElementById('peones').value) || 0;
 
   // --- Validaciones ---
   if (!origen) {
@@ -465,7 +564,7 @@ function enviarWhatsApp() {
     return;
   }
 
-  // Calcular volumen, ítems y recargo km
+  // Calcular volumen, ítems y recargos
   let volumen = 0;
   let items   = 0;
   const lineas = [];
@@ -486,16 +585,36 @@ function enviarWhatsApp() {
 
   const kmExtra   = Math.max(0, kmInput - CONFIG.KM_FRANQUICIA);
   const recargoKm = kmExtra * CONFIG.PRECIO_POR_KM;
-  const precio    = CONFIG.PRECIO_BASE + (volumen * CONFIG.PRECIO_POR_M3) + recargoKm;
+  
+  // Costo viaje base
+  let costoViaje = CONFIG.PRECIO_BASE + (volumen * CONFIG.PRECIO_POR_M3) + recargoKm;
+
+  // Nocturno
+  let recargoNocturno = 0;
+  let esNocturno = horaVal >= CONFIG.HORA_INICIO_NOCTURNO;
+  if (esNocturno) {
+    recargoNocturno = costoViaje * CONFIG.PORCENTAJE_RECARGO_NOCTURNO;
+  }
+
+  // Peones
+  let costoPeones = 0;
+  if (peones === 1) costoPeones = CONFIG.PRECIO_1_PEON;
+  if (peones === 2) costoPeones = CONFIG.PRECIO_2_PEONES;
+
+  const precio = costoViaje + recargoNocturno + costoPeones;
+
+  // --- Detalles del servicio ---
+  const lineasServicio = [
+    `📅 Fecha/Hora: ${dia} a las ${horaVal.toString().padStart(2, '0')}:00 hs` + (esNocturno ? ' 🌙 (Recargo nocturno)' : ''),
+    `👥 Asistencia: ${peones === 0 ? 'Sin peón (Solo chofer)' : peones === 1 ? '1 Peón' : '2 Peones'}`
+  ];
 
   // --- Líneas opcionales de distancia ---
-  const lineasKm = [];
   if (kmInput > 0) {
-    lineasKm.push(`🛣️ Distancia estimada: ${kmInput} km`);
     if (kmExtra > 0) {
-      lineasKm.push(`⚡ Km extra (más de ${CONFIG.KM_FRANQUICIA} km): ${kmExtra} km · +$${formatearPesos(recargoKm)}`);
+      lineasServicio.push(`🛣️ Distancia: ${kmInput} km (${kmExtra} km extra · +$${formatearPesos(recargoKm)})`);
     } else {
-      lineasKm.push(`✅ Dentro de la franquicia de ${CONFIG.KM_FRANQUICIA} km (sin recargo)`);
+      lineasServicio.push(`🛣️ Distancia: ${kmInput} km (Dentro de franquicia de ${CONFIG.KM_FRANQUICIA} km)`);
     }
   }
 
@@ -505,7 +624,7 @@ function enviarWhatsApp() {
     '',
     `📍 Origen: ${origen}`,
     `🏁 Destino: ${destino}`,
-    ...(lineasKm.length ? ['', ...lineasKm] : []),
+    ...lineasServicio,
     '',
     '📦 Detalle de lo que llevo:',
     ...lineas,
