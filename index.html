@@ -87,6 +87,62 @@
     .qty-btn { transition: transform 0.1s ease, background 0.15s; user-select: none; }
     .qty-btn:active { transform: scale(0.85); }
 
+    /* ── Custom Select component ──────────────────────────── */
+    .cs-wrapper { position: relative; user-select: none; }
+    .cs-trigger {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.09);
+      color: #fff;
+      border-radius: 0.75rem;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 300;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .cs-trigger.open,
+    .cs-trigger:focus {
+      outline: none;
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+    }
+    .cs-arrow { transition: transform 0.2s ease; flex-shrink: 0; color: #64748b; }
+    .cs-trigger.open .cs-arrow { transform: rotate(180deg); }
+    .cs-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0; right: 0;
+      background: #18181c;
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 0.75rem;
+      overflow: hidden;
+      z-index: 200;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+      display: none;
+    }
+    .cs-dropdown.open { display: block; animation: pop-in 0.18s ease; }
+    .cs-option {
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      color: #94a3b8;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      transition: background 0.15s, color 0.15s;
+    }
+    .cs-option:last-child { border-bottom: none; }
+    .cs-option:hover { background: rgba(255,255,255,0.07); color: #fff; }
+    .cs-option.selected { color: #f59e0b; background: rgba(245,158,11,0.09); font-weight: 600; }
+
+    /* ── Hide native number spinner ───────────────────────── */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+
     /* ── Item card active state ───────────────────────────── */
     .item-card { transition: border-color 0.2s, box-shadow 0.2s; }
     .item-card.has-items {
@@ -171,54 +227,74 @@
     </h2>
 
     <div class="grid grid-cols-2 gap-3">
-      <!-- Día de la semana -->
+      <!-- Custom Select: Día -->
       <div class="space-y-1.5">
-        <label for="diaSemana" class="text-xs font-bold uppercase tracking-widest block" style="color:#4b5563;">Día</label>
-        <select id="diaSemana" onchange="actualizarTotales()" class="input-custom w-full rounded-xl px-3 py-3 text-sm font-light">
-          <option value="Lunes">Lunes</option>
-          <option value="Martes">Martes</option>
-          <option value="Miércoles">Miércoles</option>
-          <option value="Jueves">Jueves</option>
-          <option value="Viernes">Viernes</option>
-          <option value="Sábado">Sábado</option>
-          <option value="Domingo">Domingo</option>
-        </select>
+        <label class="text-xs font-bold uppercase tracking-widest block" style="color:#4b5563;">Día</label>
+        <input type="hidden" id="diaSemana" value="Lunes">
+        <div class="cs-wrapper">
+          <div class="cs-trigger" tabindex="0" onclick="toggleCS(this)">
+            <span class="cs-label">Lunes</span>
+            <svg class="cs-arrow w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+          <div class="cs-dropdown">
+            <div class="cs-option selected" data-value="Lunes"   data-target="diaSemana" onclick="selectCS(this)">Lunes</div>
+            <div class="cs-option"          data-value="Martes"  data-target="diaSemana" onclick="selectCS(this)">Martes</div>
+            <div class="cs-option"          data-value="Miércoles" data-target="diaSemana" onclick="selectCS(this)">Miércoles</div>
+            <div class="cs-option"          data-value="Jueves"  data-target="diaSemana" onclick="selectCS(this)">Jueves</div>
+            <div class="cs-option"          data-value="Viernes" data-target="diaSemana" onclick="selectCS(this)">Viernes</div>
+            <div class="cs-option"          data-value="Sábado"  data-target="diaSemana" onclick="selectCS(this)">Sábado</div>
+            <div class="cs-option"          data-value="Domingo" data-target="diaSemana" onclick="selectCS(this)">Domingo</div>
+          </div>
+        </div>
       </div>
 
-      <!-- Hora aproximada -->
+      <!-- Custom Select: Hora -->
       <div class="space-y-1.5">
-        <label for="horaServicio" class="text-xs font-bold uppercase tracking-widest block" style="color:#4b5563;">Hora</label>
-        <select id="horaServicio" onchange="actualizarTotales()" class="input-custom w-full rounded-xl px-3 py-3 text-sm font-light">
-          <!-- Generado de 6am a 22h -->
-          <option value="6">06:00 hs</option>
-          <option value="7">07:00 hs</option>
-          <option value="8">08:00 hs</option>
-          <option value="9">09:00 hs</option>
-          <option value="10">10:00 hs</option>
-          <option value="11">11:00 hs</option>
-          <option value="12">12:00 hs</option>
-          <option value="13">13:00 hs</option>
-          <option value="14">14:00 hs</option>
-          <option value="15">15:00 hs</option>
-          <option value="16">16:00 hs</option>
-          <option value="17">17:00 hs</option>
-          <option value="18">18:00 hs</option>
-          <option value="19">19:00 hs</option>
-          <option value="20">20:00 hs (Nocturno)</option>
-          <option value="21">21:00 hs (Nocturno)</option>
-          <option value="22">22:00 hs (Nocturno)</option>
-        </select>
+        <label class="text-xs font-bold uppercase tracking-widest block" style="color:#4b5563;">Hora</label>
+        <input type="hidden" id="horaServicio" value="6">
+        <div class="cs-wrapper">
+          <div class="cs-trigger" tabindex="0" onclick="toggleCS(this)">
+            <span class="cs-label">06:00 hs</span>
+            <svg class="cs-arrow w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+          <div class="cs-dropdown">
+            <div class="cs-option selected" data-value="6"  data-target="horaServicio" onclick="selectCS(this)">06:00 hs</div>
+            <div class="cs-option"          data-value="7"  data-target="horaServicio" onclick="selectCS(this)">07:00 hs</div>
+            <div class="cs-option"          data-value="8"  data-target="horaServicio" onclick="selectCS(this)">08:00 hs</div>
+            <div class="cs-option"          data-value="9"  data-target="horaServicio" onclick="selectCS(this)">09:00 hs</div>
+            <div class="cs-option"          data-value="10" data-target="horaServicio" onclick="selectCS(this)">10:00 hs</div>
+            <div class="cs-option"          data-value="11" data-target="horaServicio" onclick="selectCS(this)">11:00 hs</div>
+            <div class="cs-option"          data-value="12" data-target="horaServicio" onclick="selectCS(this)">12:00 hs</div>
+            <div class="cs-option"          data-value="13" data-target="horaServicio" onclick="selectCS(this)">13:00 hs</div>
+            <div class="cs-option"          data-value="14" data-target="horaServicio" onclick="selectCS(this)">14:00 hs</div>
+            <div class="cs-option"          data-value="15" data-target="horaServicio" onclick="selectCS(this)">15:00 hs</div>
+            <div class="cs-option"          data-value="16" data-target="horaServicio" onclick="selectCS(this)">16:00 hs</div>
+            <div class="cs-option"          data-value="17" data-target="horaServicio" onclick="selectCS(this)">17:00 hs</div>
+            <div class="cs-option"          data-value="18" data-target="horaServicio" onclick="selectCS(this)">18:00 hs</div>
+            <div class="cs-option"          data-value="19" data-target="horaServicio" onclick="selectCS(this)">19:00 hs</div>
+            <div class="cs-option"          data-value="20" data-target="horaServicio" onclick="selectCS(this)">20:00 hs 🌙</div>
+            <div class="cs-option"          data-value="21" data-target="horaServicio" onclick="selectCS(this)">21:00 hs 🌙</div>
+            <div class="cs-option"          data-value="22" data-target="horaServicio" onclick="selectCS(this)">22:00 hs 🌙</div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Selección de Peones -->
+    <!-- Custom Select: Peones -->
     <div class="space-y-1.5">
-      <label for="peones" class="text-xs font-bold uppercase tracking-widest block" style="color:#4b5563;">Asistencia (Peones)</label>
-      <select id="peones" onchange="actualizarTotales()" class="input-custom w-full rounded-xl px-4 py-3 text-sm font-light">
-        <option value="0">Sin peón (Solo chofer)</option>
-        <option value="1">1 Peón adicional (+$12.000)</option>
-        <option value="2">2 Peones adicionales (+$22.000)</option>
-      </select>
+      <label class="text-xs font-bold uppercase tracking-widest block" style="color:#4b5563;">Asistencia (Peones)</label>
+      <input type="hidden" id="peones" value="0">
+      <div class="cs-wrapper">
+        <div class="cs-trigger" tabindex="0" onclick="toggleCS(this)">
+          <span class="cs-label">Sin peón — Solo chofer</span>
+          <svg class="cs-arrow w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="cs-dropdown">
+          <div class="cs-option selected" data-value="0" data-target="peones" onclick="selectCS(this)">Sin peón — Solo chofer</div>
+          <div class="cs-option"          data-value="1" data-target="peones" onclick="selectCS(this)">1 Peón adicional &nbsp;·&nbsp; <span style="color:#f59e0b;">+$12.000</span></div>
+          <div class="cs-option"          data-value="2" data-target="peones" onclick="selectCS(this)">2 Peones adicionales &nbsp;·&nbsp; <span style="color:#f59e0b;">+$22.000</span></div>
+        </div>
+      </div>
     </div>
 
     <!-- Badge de recargo nocturno -->
@@ -259,19 +335,33 @@
              autocomplete="street-address" />
     </div>
 
-    <!-- Kilómetros -->
+    <!-- Kilómetros con control +/- custom -->
     <div class="space-y-1.5">
-      <label for="kilometros"
-             class="text-xs font-bold uppercase tracking-widest block"
+      <label class="text-xs font-bold uppercase tracking-widest block"
              style="color:#4b5563;">📏 Distancia estimada (km)</label>
-      <div class="relative">
-        <input id="kilometros" type="number" min="0" max="999" step="1"
-               placeholder="Ej: 25"
-               oninput="actualizarTotales()"
-               class="input-custom w-full rounded-xl px-4 py-3.5 text-sm font-light pr-14"
-               inputmode="numeric" />
-        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold mono"
-              style="color:#64748b;">km</span>
+      <div class="flex items-center gap-2">
+        <!-- Botón restar -->
+        <button onclick="cambiarKm(-5)"
+                class="qty-btn w-12 h-12 rounded-xl font-bold text-xl flex items-center justify-center flex-shrink-0"
+                style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.10); color:#94a3b8;"
+                aria-label="Restar 5 km">−</button>
+
+        <!-- Input numérico centrado sin spinner -->
+        <div class="relative flex-1">
+          <input id="kilometros" type="number" min="0" max="999" step="1"
+                 placeholder="0"
+                 oninput="actualizarTotales()"
+                 class="input-custom w-full rounded-xl px-4 py-3 text-sm font-bold text-center mono"
+                 inputmode="numeric" />
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold mono pointer-events-none"
+                style="color:#475569;">km</span>
+        </div>
+
+        <!-- Botón sumar -->
+        <button onclick="cambiarKm(5)"
+                class="qty-btn w-12 h-12 rounded-xl font-bold text-xl flex items-center justify-center flex-shrink-0"
+                style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.28); color:#f59e0b;"
+                aria-label="Sumar 5 km">+</button>
       </div>
       <!-- Badge de recargo — se muestra solo si supera la franquicia -->
       <div id="kmBadge" class="hidden items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold"
@@ -666,6 +756,72 @@ function closeAlert() {
 document.getElementById('alertModal').addEventListener('click', function(e) {
   if (e.target === this) closeAlert();
 });
+
+/* ─────────────────────────────────────────────────────────────────
+   🔽  CUSTOM SELECT — toggleCS / selectCS
+───────────────────────────────────────────────────────────────── */
+function toggleCS(trigger) {
+  const dropdown = trigger.nextElementSibling;
+  const isOpen   = trigger.classList.contains('open');
+
+  // Cerrar todos primero
+  closeAllCS();
+
+  if (!isOpen) {
+    trigger.classList.add('open');
+    dropdown.style.display = 'block';
+    // Pequeño reflow para animar
+    void dropdown.offsetWidth;
+    dropdown.classList.add('open');
+  }
+}
+
+function selectCS(option) {
+  const value    = option.dataset.value;
+  const targetId = option.dataset.target;
+  const dropdown = option.closest('.cs-dropdown');
+  const trigger  = dropdown.previousElementSibling;
+
+  // Actualizar input oculto
+  document.getElementById(targetId).value = value;
+
+  // Actualizar label visible (texto limpio sin hijos HTML)
+  trigger.querySelector('.cs-label').textContent = option.textContent.trim();
+
+  // Marcar seleccionado
+  dropdown.querySelectorAll('.cs-option').forEach(o => o.classList.remove('selected'));
+  option.classList.add('selected');
+
+  // Cerrar
+  closeAllCS();
+
+  // Recalcular
+  actualizarTotales();
+}
+
+function closeAllCS() {
+  document.querySelectorAll('.cs-trigger').forEach(t => t.classList.remove('open'));
+  document.querySelectorAll('.cs-dropdown').forEach(d => {
+    d.classList.remove('open');
+    d.style.display = 'none';
+  });
+}
+
+// Cerrar al tocar fuera
+document.addEventListener('click', e => {
+  if (!e.target.closest('.cs-wrapper')) closeAllCS();
+});
+
+/* ─────────────────────────────────────────────────────────────────
+   📏  CONTROL DE KM CON BOTONES +/−
+───────────────────────────────────────────────────────────────── */
+function cambiarKm(delta) {
+  const input  = document.getElementById('kilometros');
+  const actual = parseFloat(input.value) || 0;
+  const nuevo  = Math.max(0, Math.min(999, actual + delta));
+  input.value  = nuevo > 0 ? nuevo : '';
+  actualizarTotales();
+}
 
 /* ─────────────────────────────────────────────────────────────────
    🚀  INIT
