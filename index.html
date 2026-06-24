@@ -187,6 +187,28 @@
              class="input-custom w-full rounded-xl px-4 py-3.5 text-sm font-light"
              autocomplete="street-address" />
     </div>
+
+    <!-- Kilómetros -->
+    <div class="space-y-1.5">
+      <label for="kilometros"
+             class="text-xs font-bold uppercase tracking-widest block"
+             style="color:#4b5563;">📏 Distancia estimada (km)</label>
+      <div class="relative">
+        <input id="kilometros" type="number" min="0" max="999" step="1"
+               placeholder="Ej: 25"
+               oninput="actualizarTotales()"
+               class="input-custom w-full rounded-xl px-4 py-3.5 text-sm font-light pr-14"
+               inputmode="numeric" />
+        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold mono"
+              style="color:#64748b;">km</span>
+      </div>
+      <!-- Badge de recargo — se muestra solo si supera la franquicia -->
+      <div id="kmBadge" class="hidden items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold"
+           style="background:rgba(245,158,11,0.10); border:1px solid rgba(245,158,11,0.25); color:#f59e0b;">
+        <span>⚡</span>
+        <span id="kmBadgeText">Recargo por distancia</span>
+      </div>
+    </div>
   </section>
 
   <!-- ── SECCIÓN: INVENTARIO ────────────────────────── -->
@@ -229,10 +251,10 @@
 
       <div class="w-px h-10" style="background:rgba(255,255,255,0.08);"></div>
 
-      <!-- Cantidad de ítems -->
+      <!-- Km extra -->
       <div class="text-center">
-        <p class="text-[10px] font-bold uppercase tracking-widest mb-0.5" style="color:#475569;">Objetos</p>
-        <p id="totalItems" class="mono text-xl font-bold text-white">0</p>
+        <p class="text-[10px] font-bold uppercase tracking-widest mb-0.5" style="color:#475569;">Km extra</p>
+        <p id="totalKmExtra" class="mono text-xl font-bold" style="color:#94a3b8;">—</p>
       </div>
     </div>
 
@@ -266,6 +288,8 @@
 const CONFIG = {
   PRECIO_BASE:      15000,          // Costo fijo de arranque (ARS)
   PRECIO_POR_M3:    8000,           // Precio por m³ de volumen (ARS)
+  KM_FRANQUICIA:    40,             // Km incluidos sin costo extra
+  PRECIO_POR_KM:    600,            // Precio por cada km adicional (ARS)
   TELEFONO_DESTINO: '5491100000000' // ⚠️ BETA: número ficticio — reemplazar antes de producción
 };
 
@@ -361,7 +385,8 @@ function cambiarCantidad(id, delta) {
 
 /* ─────────────────────────────────────────────────────────────────
    💰  CÁLCULO EN TIEMPO REAL
-   Fórmula: Precio Base + (Volumen Total × Precio por m³)
+   Fórmula: Precio Base + (Volumen Total × Precio por m³) + recargo km
+   Recargo km: max(0, km - KM_FRANQUICIA) × PRECIO_POR_KM
 ───────────────────────────────────────────────────────────────── */
 function actualizarTotales() {
   let volumen = 0;
@@ -373,11 +398,17 @@ function actualizarTotales() {
     items   += q;
   });
 
-  const precio = CONFIG.PRECIO_BASE + (volumen * CONFIG.PRECIO_POR_M3);
+  // Kilómetros ingresados
+  const kmInput   = parseFloat(document.getElementById('kilometros').value) || 0;
+  const kmExtra   = Math.max(0, kmInput - CONFIG.KM_FRANQUICIA);
+  const recargoKm = kmExtra * CONFIG.PRECIO_POR_KM;
 
-  // Mostrar precio solo cuando hay items (si no, mostrar base)
-  const precioMostrar = items > 0 ? precio : CONFIG.PRECIO_BASE;
+  const precio = CONFIG.PRECIO_BASE + (volumen * CONFIG.PRECIO_POR_M3) + recargoKm;
 
+  // Precio base si aún no hay items ni km
+  const precioMostrar = (items > 0 || kmInput > 0) ? precio : CONFIG.PRECIO_BASE;
+
+  // ── Actualizar DOM ──────────────────────────────────────
   document.getElementById('totalVolumen').innerHTML =
     `<span class="mono text-xl font-bold" style="color:#f59e0b;">${volumen.toFixed(2)}</span>` +
     ` <span class="text-xs font-normal" style="color:#64748b;">m³</span>`;
@@ -385,7 +416,28 @@ function actualizarTotales() {
   document.getElementById('totalPrecio').textContent =
     `$${formatearPesos(Math.round(precioMostrar))}`;
 
-  document.getElementById('totalItems').textContent = items;
+  // Km extra en footer
+  const kmExtraEl = document.getElementById('totalKmExtra');
+  if (kmExtra > 0) {
+    kmExtraEl.textContent = `+${kmExtra}`;
+    kmExtraEl.style.color = '#f59e0b';
+  } else {
+    kmExtraEl.textContent = '—';
+    kmExtraEl.style.color = '#94a3b8';
+  }
+
+  // Badge de recargo bajo el input
+  const badge     = document.getElementById('kmBadge');
+  const badgeText = document.getElementById('kmBadgeText');
+  if (kmExtra > 0) {
+    badgeText.textContent =
+      `${kmExtra} km extra · +$${formatearPesos(recargoKm)} de recargo`;
+    badge.classList.remove('hidden');
+    badge.classList.add('flex');
+  } else {
+    badge.classList.add('hidden');
+    badge.classList.remove('flex');
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -401,6 +453,7 @@ function formatearPesos(numero) {
 function enviarWhatsApp() {
   const origen  = document.getElementById('origen').value.trim();
   const destino = document.getElementById('destino').value.trim();
+  const kmInput = parseFloat(document.getElementById('kilometros').value) || 0;
 
   // --- Validaciones ---
   if (!origen) {
@@ -412,7 +465,7 @@ function enviarWhatsApp() {
     return;
   }
 
-  // Calcular volumen e ítems
+  // Calcular volumen, ítems y recargo km
   let volumen = 0;
   let items   = 0;
   const lineas = [];
@@ -431,7 +484,20 @@ function enviarWhatsApp() {
     return;
   }
 
-  const precio = CONFIG.PRECIO_BASE + (volumen * CONFIG.PRECIO_POR_M3);
+  const kmExtra   = Math.max(0, kmInput - CONFIG.KM_FRANQUICIA);
+  const recargoKm = kmExtra * CONFIG.PRECIO_POR_KM;
+  const precio    = CONFIG.PRECIO_BASE + (volumen * CONFIG.PRECIO_POR_M3) + recargoKm;
+
+  // --- Líneas opcionales de distancia ---
+  const lineasKm = [];
+  if (kmInput > 0) {
+    lineasKm.push(`🛣️ Distancia estimada: ${kmInput} km`);
+    if (kmExtra > 0) {
+      lineasKm.push(`⚡ Km extra (más de ${CONFIG.KM_FRANQUICIA} km): ${kmExtra} km · +$${formatearPesos(recargoKm)}`);
+    } else {
+      lineasKm.push(`✅ Dentro de la franquicia de ${CONFIG.KM_FRANQUICIA} km (sin recargo)`);
+    }
+  }
 
   // --- Construcción del mensaje ---
   const mensaje = [
@@ -439,6 +505,7 @@ function enviarWhatsApp() {
     '',
     `📍 Origen: ${origen}`,
     `🏁 Destino: ${destino}`,
+    ...(lineasKm.length ? ['', ...lineasKm] : []),
     '',
     '📦 Detalle de lo que llevo:',
     ...lineas,
