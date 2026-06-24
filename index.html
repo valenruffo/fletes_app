@@ -698,36 +698,46 @@ function enviarWhatsApp() {
   const precio = costoViaje + recargoNocturno + costoPeones;
 
   // --- Detalles del servicio ---
+  const asCostoPeon = peones === 1
+    ? '1 Peon (+$' + formatearPesos(CONFIG.PRECIO_1_PEON) + ')'
+    : peones === 2
+      ? '2 Peones (+$' + formatearPesos(CONFIG.PRECIO_2_PEONES) + ')'
+      : 'Sin peon (Solo chofer)';
+
   const lineasServicio = [
-    `◆ Fecha/Hora: ${dia} a las ${horaVal.toString().padStart(2, '0')}:00 hs` + (esNocturno ? ' (Recargo nocturno)' : ''),
-    `◆ Asistencia: ${peones === 0 ? 'Sin peon (Solo chofer)' : peones === 1 ? '1 Peon (+$' + formatearPesos(CONFIG.PRECIO_1_PEON) + ')' : '2 Peones (+$' + formatearPesos(CONFIG.PRECIO_2_PEONES) + ')'}`
+    'Fecha/Hora: ' + dia + ' a las ' + horaVal.toString().padStart(2, '0') + ':00 hs' + (esNocturno ? ' (Recargo nocturno)' : ''),
+    'Asistencia: ' + asCostoPeon
   ];
 
   // --- Lineas opcionales de distancia ---
   if (kmInput > 0) {
     if (kmExtra > 0) {
-      lineasServicio.push(`◆ Distancia: ${kmInput} km (${kmExtra} km extra · +$${formatearPesos(recargoKm)})`);
+      lineasServicio.push('Distancia: ' + kmInput + ' km (' + kmExtra + ' km extra, +$' + formatearPesos(recargoKm) + ')');
     } else {
-      lineasServicio.push(`◆ Distancia: ${kmInput} km (Dentro de franquicia de ${CONFIG.KM_FRANQUICIA} km)`);
+      lineasServicio.push('Distancia: ' + kmInput + ' km (dentro de franquicia de ' + CONFIG.KM_FRANQUICIA + ' km)');
     }
   }
 
-  // --- Construccion del mensaje ---
-  const mensaje = [
-    '!Hola! Quiero consultar por un flete/mudanza.',
+  // Usamos *texto* (negrita nativa WhatsApp) para secciones — sin Unicode raro
+  const partes = [
+    '\u00a1Hola! Quiero consultar por un flete/mudanza.',
     '',
-    `◆ Origen: ${origen}`,
-    `◆ Destino: ${destino}`,
+    '*Direcciones:*',
+    'Origen: ' + origen,
+    'Destino: ' + destino,
+    '',
+    '*Servicio:*',
     ...lineasServicio,
     '',
-    '◆ Detalle de lo que llevo:',
+    '*Detalle de lo que llevo:*',
     ...lineas,
     '',
-    `◆ Espacio estimado: ${volumen.toFixed(2)} m3`,
-    `◆ Precio estimado del viaje: $${formatearPesos(Math.round(precio))}`,
+    'Espacio estimado: ' + volumen.toFixed(2) + ' m3',
+    '*Precio estimado del viaje: $' + formatearPesos(Math.round(precio)) + '*',
     '',
-    '?Tienen disponibilidad para estos dias?',
-  ].join('\n');
+    '\u00bfTienen disponibilidad para estos dias?',
+  ];
+  const mensaje = partes.join('\n');
 
   const url = `https://wa.me/${CONFIG.TELEFONO_DESTINO}?text=${encodeURIComponent(mensaje)}`;
   window.open(url, '_blank', 'noopener,noreferrer');
