@@ -120,11 +120,18 @@
       background: #18181c;
       border: 1px solid rgba(255,255,255,0.10);
       border-radius: 0.75rem;
-      overflow: hidden;
+      overflow-y: auto;
+      max-height: 55vh;
       z-index: 200;
       box-shadow: 0 12px 40px rgba(0,0,0,0.6);
       display: none;
+      /* scrollbar minimalista */
+      scrollbar-width: thin;
+      scrollbar-color: rgba(245,158,11,0.4) transparent;
     }
+    .cs-dropdown::-webkit-scrollbar { width: 4px; }
+    .cs-dropdown::-webkit-scrollbar-track { background: transparent; }
+    .cs-dropdown::-webkit-scrollbar-thumb { background: rgba(245,158,11,0.4); border-radius: 4px; }
     .cs-dropdown.open { display: block; animation: pop-in 0.18s ease; }
     .cs-option {
       padding: 0.75rem 1rem;
@@ -856,8 +863,21 @@ document.addEventListener('click', e => {
   ) closeAllCS();
 });
 
-// Cerrar al scrollear (el dropdown fixed queda flotando si no lo cerramos)
-window.addEventListener('scroll', () => closeAllCS(), { passive: true });
+// Al scrollear: reposicionar el dropdown para que siga al trigger.
+// Solo se cierra si el trigger salió completamente del viewport.
+window.addEventListener('scroll', () => {
+  if (!_portalDropdown || !_portalWrapper) return;
+  const trigger = _portalWrapper.querySelector('.cs-trigger');
+  const rect    = trigger.getBoundingClientRect();
+  // Si el trigger ya no es visible, cerramos
+  if (rect.bottom < 0 || rect.top > window.innerHeight) {
+    closeAllCS();
+    return;
+  }
+  // Actualizar posición para mantenerse pegado al trigger
+  _portalDropdown.style.top  = (rect.bottom + 4) + 'px';
+  _portalDropdown.style.left = rect.left + 'px';
+}, { passive: true });
 
 /* ─────────────────────────────────────────────────────────────────
    📏  CONTROL DE KM CON BOTONES +/−
