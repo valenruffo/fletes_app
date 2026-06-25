@@ -856,6 +856,9 @@ document.addEventListener('click', e => {
   ) closeAllCS();
 });
 
+// Cerrar al scrollear (el dropdown fixed queda flotando si no lo cerramos)
+window.addEventListener('scroll', () => closeAllCS(), { passive: true });
+
 /* ─────────────────────────────────────────────────────────────────
    📏  CONTROL DE KM CON BOTONES +/−
 ───────────────────────────────────────────────────────────────── */
