@@ -225,6 +225,21 @@
     </p>
   </header>
 
+  <!-- ── SECCIÓN: DATOS DEL CLIENTE ───────────────── -->
+  <section class="glass-card rounded-2xl p-5 mb-5 space-y-4 animate-slide-up"
+           style="animation-delay: 0.02s;">
+    <h2 class="text-xs font-bold tracking-[0.18em] uppercase flex items-center gap-2"
+        style="color:#64748b;">
+      <span>👤</span> Datos del Cliente
+    </h2>
+    <div class="space-y-1.5">
+      <label class="text-xs font-bold uppercase tracking-widest block" style="color:#4b5563;">Nombre Completo</label>
+      <input type="text" id="nombreCompleto"
+             class="w-full rounded-xl px-4 py-3 text-sm input-custom"
+             placeholder="Ej: Juan Pérez">
+    </div>
+  </section>
+
   <!-- ── SECCIÓN: FECHA, HORA Y PEONES ───────────────── -->
   <section class="glass-card rounded-2xl p-5 mb-5 space-y-4 animate-slide-up"
            style="animation-delay: 0.04s;">
@@ -648,6 +663,7 @@ function formatearPesos(numero) {
    📲  ACCIÓN PRINCIPAL: GENERAR ENLACE Y ABRIR WHATSAPP
 ───────────────────────────────────────────────────────────────── */
 function enviarWhatsApp() {
+  const nombreCompleto = document.getElementById('nombreCompleto').value.trim();
   const origen  = document.getElementById('origen').value.trim();
   const destino = document.getElementById('destino').value.trim();
   const kmInput = parseFloat(document.getElementById('kilometros').value) || 0;
@@ -656,6 +672,10 @@ function enviarWhatsApp() {
   const peones  = parseInt(document.getElementById('peones').value) || 0;
 
   // --- Validaciones ---
+  if (!nombreCompleto) {
+    showAlert('👤', 'Por favor ingresá tu\nNombre Completo antes de continuar.');
+    return;
+  }
   if (!origen) {
     showAlert('📍', 'Por favor completá la\nDirección de Origen antes de continuar.');
     return;
@@ -727,7 +747,7 @@ function enviarWhatsApp() {
 
   // Usamos *texto* (negrita nativa WhatsApp) para secciones — sin Unicode raro
   const partes = [
-    '\u00a1Hola! Quiero consultar por un flete/mudanza.',
+    `\u00a1Hola! Soy *${nombreCompleto}*. Quiero consultar por un flete/mudanza.`,
     '',
     '*Direcciones:*',
     'Origen: ' + origen,
