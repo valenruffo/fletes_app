@@ -468,22 +468,24 @@
    ⚙️  CONFIGURACIÓN DEL FLETERO
    Editá solo este bloque para personalizar tarifas y teléfono.
 ───────────────────────────────────────────────────────────────── */
-let CONFIG = {};
+let CONFIG = {
+  PRECIO_BASE: 15000, PRECIO_POR_M3: 8000, KM_FRANQUICIA: 40, PRECIO_POR_KM: 600,
+  PRECIO_1_PEON: 12000, PRECIO_2_PEONES: 22000, HORA_INICIO_NOCTURNO: 20,
+  PORCENTAJE_RECARGO_NOCTURNO: 0.20, TELEFONO_DESTINO: '5491135167226'
+};
 
 // Cargar configuración desde el archivo JSON (editable por el panel admin)
 fetch('/config.json?t=' + new Date().getTime())
   .then(res => res.json())
   .then(data => {
     CONFIG = data;
+    // Actualizar la calculadora con los nuevos valores apenas terminan de descargar
+    if (typeof calcularCosto === 'function') {
+      calcularCosto();
+    }
   })
   .catch(err => {
     console.error("Error al cargar config.json, usando valores por defecto:", err);
-    // Valores de respaldo
-    CONFIG = {
-      PRECIO_BASE: 15000, PRECIO_POR_M3: 8000, KM_FRANQUICIA: 40, PRECIO_POR_KM: 600,
-      PRECIO_1_PEON: 12000, PRECIO_2_PEONES: 22000, HORA_INICIO_NOCTURNO: 20,
-      PORCENTAJE_RECARGO_NOCTURNO: 0.20, TELEFONO_DESTINO: '5491135167226'
-    };
   });
 
 /* ─────────────────────────────────────────────────────────────────
