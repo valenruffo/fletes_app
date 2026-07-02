@@ -480,8 +480,8 @@ fetch('/config.json?t=' + new Date().getTime())
   .then(data => {
     CONFIG = data;
     // Actualizar la calculadora con los nuevos valores apenas terminan de descargar
-    if (typeof calcularCosto === 'function') {
-      calcularCosto();
+    if (typeof actualizarTotales === 'function') {
+      actualizarTotales();
     }
   })
   .catch(err => {
