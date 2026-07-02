@@ -335,10 +335,17 @@
       <span>🗺️</span> Zona de Cobertura
     </h2>
     <div class="space-y-1.5">
-      <label for="zonaSeleccionada" class="text-xs font-bold uppercase tracking-widest block" style="color:#4b5563;">Zona de origen</label>
-      <select id="zonaSeleccionada" onchange="actualizarTotales()" class="input-custom w-full rounded-xl px-4 py-3.5 text-sm font-light">
-        <!-- Se autocompleta desde config.json -->
-      </select>
+      <label class="text-xs font-bold uppercase tracking-widest block" style="color:#4b5563;">Zona de origen</label>
+      <input type="hidden" id="zonaSeleccionada" value="none">
+      <div class="cs-wrapper" id="zonaSelectWrapper">
+        <div class="cs-trigger" tabindex="0" onclick="toggleCS(this)">
+          <span class="cs-label">No especificar</span>
+          <svg class="cs-arrow w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="cs-dropdown" id="zonaDropdown">
+          <!-- Se autocompleta desde config.json -->
+        </div>
+      </div>
     </div>
   </section>
 
@@ -526,15 +533,31 @@ fetch('/config.json?t=' + new Date().getTime())
   });
 
 function renderZonasSelect() {
-  const select = document.getElementById('zonaSeleccionada');
-  if (!select) return;
-  select.innerHTML = '';
+  const dropdown = document.getElementById('zonaDropdown');
+  const wrapper = document.getElementById('zonaSelectWrapper');
+  if (!dropdown || !wrapper) return;
+
+  dropdown.innerHTML = '';
+  const currentVal = document.getElementById('zonaSeleccionada').value;
+
   ZONAS.forEach(zona => {
-    const opt = document.createElement('option');
-    opt.value = zona.nombre === 'No especificar' ? 'none' : zona.nombre;
-    opt.textContent = zona.nombre + (zona.precioBase ? ` (Base: $${formatearPesos(zona.precioBase)})` : '');
-    opt.className = 'bg-[#18181c] text-white';
-    select.appendChild(opt);
+    const val = zona.nombre === 'No especificar' ? 'none' : zona.nombre;
+    const label = zona.nombre + (zona.precioBase ? ` (Base: $${formatearPesos(zona.precioBase)})` : '');
+    
+    const opt = document.createElement('div');
+    opt.className = 'cs-option';
+    if (val === currentVal) {
+      opt.classList.add('selected');
+      const labelTrigger = wrapper.querySelector('.cs-label');
+      if (labelTrigger) labelTrigger.textContent = zona.nombre;
+    }
+    opt.dataset.value = val;
+    opt.dataset.target = 'zonaSeleccionada';
+    opt.dataset.label = zona.nombre;
+    opt.textContent = label;
+    opt.onclick = function() { selectCS(opt); };
+    
+    dropdown.appendChild(opt);
   });
 }
 
