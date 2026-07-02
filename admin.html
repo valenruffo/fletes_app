@@ -127,7 +127,7 @@
             + Agregar Objeto
           </button>
         </div>
-        <p class="text-xs text-gray-500">Definí los objetos, su volumen (m³), emoji e ID único (usá minúsculas, sin espacios ni caracteres especiales).</p>
+        <p class="text-xs text-gray-500">Definí los objetos, su volumen (m³) y seleccioná su emoji. El identificador se genera automáticamente por detrás.</p>
         
         <div id="catalogoContainer" class="space-y-2">
           <!-- Filas de objetos se cargan aquí -->
@@ -213,24 +213,33 @@
       
       catalogoData.forEach((obj, idx) => {
         const row = document.createElement('div');
-        row.className = 'flex flex-col gap-2 sm:flex-row sm:items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/5';
+        row.className = 'obj-row flex flex-col gap-2 sm:flex-row sm:items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/5';
         row.innerHTML = `
-          <div class="w-12 self-start sm:self-auto flex-shrink-0">
-            <input type="text" value="${obj.emoji}" placeholder="🧊" 
-                   class="obj-emoji w-full input-custom rounded-lg px-3 py-2 text-sm text-center" maxlength="4" required>
+          <!-- Selector de Emoji -->
+          <div class="relative flex-shrink-0">
+            <button type="button" onclick="toggleEmojiPicker(this)" class="w-12 h-10 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-xl hover:bg-white/10 transition-colors">
+              <span class="current-emoji">${obj.emoji || '📦'}</span>
+            </button>
+            <input type="hidden" class="obj-emoji" value="${obj.emoji || '📦'}">
           </div>
+          
+          <!-- Nombre del Objeto -->
           <div class="flex-1">
             <input type="text" value="${obj.nombre}" placeholder="Nombre (ej: Heladera)" 
-                   class="obj-nombre w-full input-custom rounded-lg px-3 py-2 text-sm" required>
+                   class="obj-nombre w-full input-custom rounded-lg px-3 py-2 text-sm" 
+                   oninput="actualizarId(this)" required>
           </div>
+          
+          <!-- Volumen en m3 -->
           <div class="w-24 flex-shrink-0">
             <input type="number" step="0.01" value="${obj.m3}" placeholder="m³ (ej: 1.20)" 
                    class="obj-m3 w-full input-custom rounded-lg px-3 py-2 text-sm text-center" required>
           </div>
-          <div class="w-32 flex-shrink-0">
-            <input type="text" value="${obj.id}" placeholder="ID (ej: heladera)" 
-                   class="obj-id w-full input-custom rounded-lg px-3 py-2 text-sm text-center font-mono" required>
-          </div>
+          
+          <!-- ID Oculto Autocompletado -->
+          <input type="hidden" class="obj-id" value="${obj.id}">
+          
+          <!-- Botón Eliminar -->
           <button type="button" onclick="eliminarObjeto(${idx})" class="w-10 h-10 flex items-center justify-center rounded-lg bg-red-900/40 hover:bg-red-900 text-red-400 border border-red-500/20 text-sm flex-shrink-0 self-end sm:self-auto">
             🗑️
           </button>
@@ -239,7 +248,67 @@
       });
     }
 
+    // Funciones Auxiliares para ID y Emojis
+    function slugify(text) {
+      return text.toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, '_')
+        .replace(/[^a-z0-9_-]/g, '')
+        .replace(/_+/g, '_');
+    }
+
+    function actualizarId(nameInput) {
+      const row = nameInput.closest('.obj-row');
+      if (row) {
+        const idInput = row.querySelector('.obj-id');
+        if (idInput) {
+          idInput.value = slugify(nameInput.value);
+        }
+      }
+    }
+
+    const EMOJIS = ['📦', '🧊', '🛋️', '🌀', '🛏️', '🪑', '🍳', '📺', '🧺', '🪞', '🎹', '🚲', '🛵', '🛹', '🧳', '🔨', '🪴', '🧸', '🚪', '🪟', '🧹', '🚽'];
+
+    function toggleEmojiPicker(btn) {
+      cerrarPickers();
+
+      const container = btn.parentElement;
+      const picker = document.createElement('div');
+      picker.className = 'emoji-picker absolute top-12 left-0 w-48 bg-[#18181c] border border-white/10 rounded-xl p-2 grid grid-cols-5 gap-1.5 z-10 shadow-2xl';
+      
+      EMOJIS.forEach(emoji => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-lg transition-colors';
+        item.textContent = emoji;
+        item.onclick = function() {
+          container.querySelector('.current-emoji').textContent = emoji;
+          container.querySelector('.obj-emoji').value = emoji;
+          picker.remove();
+        };
+        picker.appendChild(item);
+      });
+
+      setTimeout(() => {
+        document.addEventListener('click', function close(e) {
+          if (!container.contains(e.target)) {
+            picker.remove();
+            document.removeEventListener('click', close);
+          }
+        });
+      }, 10);
+
+      container.appendChild(picker);
+    }
+
+    function cerrarPickers() {
+      document.querySelectorAll('.emoji-picker').forEach(p => p.remove());
+    }
+
     function persistirInputsListas() {
+      cerrarPickers();
+      
       // Zonas
       const zonaRows = document.querySelectorAll('#zonasContainer > div');
       zonasData = Array.from(zonaRows).map(row => {
@@ -252,13 +321,14 @@
       });
 
       // Catálogo
-      const objRows = document.querySelectorAll('#catalogoContainer > div');
+      const objRows = document.querySelectorAll('#catalogoContainer > .obj-row');
       catalogoData = Array.from(objRows).map(row => {
+        const nameVal = row.querySelector('.obj-nombre').value.trim();
         return {
           emoji: row.querySelector('.obj-emoji').value.trim(),
-          nombre: row.querySelector('.obj-nombre').value.trim(),
+          nombre: nameVal,
           m3: parseFloat(row.querySelector('.obj-m3').value) || 0.1,
-          id: row.querySelector('.obj-id').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '')
+          id: row.querySelector('.obj-id').value.trim() || slugify(nameVal)
         };
       });
     }
@@ -271,7 +341,7 @@
 
     function agregarObjeto() {
       persistirInputsListas();
-      catalogoData.push({ id: '', emoji: '', nombre: '', m3: 0.5 });
+      catalogoData.push({ id: '', emoji: '📦', nombre: '', m3: 0.5 });
       renderCatalogoList();
     }
 
@@ -301,7 +371,7 @@
         return;
       }
       if (catalogoData.some(o => !o.id || !o.nombre)) {
-        alert("Error: Todos los objetos del catálogo deben tener nombre e ID.");
+        alert("Error: Todos los objetos del catálogo deben tener nombre.");
         return;
       }
       if (zonasData.some(z => !z.nombre)) {

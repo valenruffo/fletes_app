@@ -427,6 +427,21 @@
     <div id="itemList" class="space-y-3"></div>
   </section>
 
+  <!-- ── SECCIÓN: NOTAS EXTRA ───────────────────────── -->
+  <section class="glass-card rounded-2xl p-5 mb-5 space-y-4 animate-slide-up"
+           style="animation-delay: 0.16s;">
+    <h2 class="text-xs font-bold tracking-[0.18em] uppercase flex items-center gap-2"
+        style="color:#64748b;">
+      <span>📝</span> Notas Extra
+    </h2>
+    <div class="space-y-1.5">
+      <label for="notasExtra" class="text-xs font-bold uppercase tracking-widest block" style="color:#4b5563;">¿Querés aclarar algo? (opcional)</label>
+      <textarea id="notasExtra" rows="3"
+                placeholder="Ej: Hay que subir 2 pisos por escalera, o llevo un mueble frágil adicional..."
+                class="input-custom w-full rounded-xl px-4 py-3 text-sm font-light resize-none"></textarea>
+    </div>
+  </section>
+
 </div><!-- /main content -->
 
 <!-- ═══════════════════════════════════════════════════
@@ -751,6 +766,7 @@ function enviarWhatsApp() {
   const nombreCompleto = document.getElementById('nombreCompleto').value.trim();
   const origen  = document.getElementById('origen').value.trim();
   const destino = document.getElementById('destino').value.trim();
+  const notasExtra = document.getElementById('notasExtra') ? document.getElementById('notasExtra').value.trim() : '';
   const kmInput = parseFloat(document.getElementById('kilometros').value) || 0;
   const dia     = document.getElementById('diaSemana').value;
   const horaVal = parseInt(document.getElementById('horaServicio').value) || 6;
@@ -858,10 +874,14 @@ function enviarWhatsApp() {
     ...lineas,
     '',
     'Espacio estimado: ' + volumen.toFixed(2) + ' m3',
-    '*Precio estimado del viaje: $' + formatearPesos(Math.round(precio)) + '*',
-    '',
-    '\u00bfTienen disponibilidad para estos dias?',
+    '*Precio estimado del viaje: $' + formatearPesos(Math.round(precio)) + '*'
   ];
+
+  if (notasExtra) {
+    partes.push('', '*Notas extra:*', notasExtra);
+  }
+
+  partes.push('', '\u00bfTienen disponibilidad para estos dias?');
   const mensaje = partes.join('\n');
 
   const url = `https://wa.me/${CONFIG.TELEFONO_DESTINO}?text=${encodeURIComponent(mensaje)}`;
