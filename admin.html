@@ -190,18 +190,29 @@
       zonasData.forEach((zona, idx) => {
         const row = document.createElement('div');
         row.className = 'flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/5';
+        
+        const isDefault = (zona.nombre === 'No especificar');
+        
         row.innerHTML = `
           <div class="flex-1">
             <input type="text" value="${zona.nombre}" placeholder="Nombre de la Zona (ej: San Martín)" 
-                   class="zona-nombre w-full input-custom rounded-lg px-3 py-2 text-sm" required>
+                   class="zona-nombre w-full input-custom rounded-lg px-3 py-2 text-sm" ${isDefault ? 'disabled' : 'required'}>
           </div>
           <div class="w-36">
-            <input type="number" value="${zona.precioBase !== null && zona.precioBase !== undefined ? zona.precioBase : ''}" placeholder="Precio Base (ej: 18000)" 
-                   class="zona-precio w-full input-custom rounded-lg px-3 py-2 text-sm text-center">
+            ${isDefault ? `
+              <input type="text" value="Base General" class="zona-precio w-full input-custom rounded-lg px-3 py-2 text-sm text-center opacity-50 cursor-not-allowed" disabled>
+            ` : `
+              <input type="number" value="${zona.precioBase !== null && zona.precioBase !== undefined ? zona.precioBase : ''}" placeholder="Precio Base (ej: 18000)" 
+                     class="zona-precio w-full input-custom rounded-lg px-3 py-2 text-sm text-center" required>
+            `}
           </div>
-          <button type="button" onclick="eliminarZona(${idx})" class="w-10 h-10 flex items-center justify-center rounded-lg bg-red-900/40 hover:bg-red-900 text-red-400 border border-red-500/20 text-sm flex-shrink-0">
-            🗑️
-          </button>
+          ${isDefault ? `
+            <div class="w-10 h-10 flex-shrink-0"></div>
+          ` : `
+            <button type="button" onclick="eliminarZona(${idx})" class="w-10 h-10 flex items-center justify-center rounded-lg bg-red-900/40 hover:bg-red-900 text-red-400 border border-red-500/20 text-sm flex-shrink-0">
+              🗑️
+            </button>
+          `}
         `;
         container.appendChild(row);
       });
