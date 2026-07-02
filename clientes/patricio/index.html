@@ -526,7 +526,15 @@ let CATALOGO = [
 ];
 
 // Cargar configuración desde el archivo JSON (editable por el panel admin)
-fetch('config.json?t=' + new Date().getTime())
+let configUrl = '/config.json';
+const pathParts = window.location.pathname.split('/');
+const clientIdx = pathParts.indexOf('clientes');
+if (clientIdx !== -1 && pathParts[clientIdx + 1]) {
+  const clientName = pathParts[clientIdx + 1].trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  configUrl = `/clientes/${clientName}/config.json`;
+}
+
+fetch(configUrl + '?t=' + new Date().getTime())
   .then(res => res.json())
   .then(data => {
     CONFIG = data;

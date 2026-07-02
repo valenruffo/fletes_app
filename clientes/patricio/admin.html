@@ -168,7 +168,8 @@
 
     async function loadConfig() {
       try {
-        const res = await fetch('config.json?t=' + new Date().getTime());
+        const configUrl = clientName ? `/clientes/${clientName}/config.json` : '/config.json';
+        const res = await fetch(configUrl + '?t=' + new Date().getTime());
         const data = await res.json();
         
         // Cargar parámetros globales
