@@ -1,5 +1,5 @@
 {
-  "PRECIO_BASE": 27000,
+  "PRECIO_BASE": 25000,
   "PRECIO_POR_M3": 8000,
   "KM_FRANQUICIA": 25,
   "PRECIO_POR_KM": 1500,
@@ -28,6 +28,10 @@
     {
       "nombre": "San Isidro",
       "precioBase": 22000
+    },
+    {
+      "nombre": "Saavedra",
+      "precioBase": 21000
     }
   ],
   "CATALOGO": [
