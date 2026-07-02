@@ -14,7 +14,7 @@
   <style>
     body { font-family: 'Sora', sans-serif; background: #0e0e10; color: #fff; }
     .glass-card { background: rgba(34,34,40,0.75); border: 1px solid rgba(255,255,255,0.07); backdrop-filter: blur(12px); }
-    .input-custom { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09); color: #fff; outline: none; }
+    .input-custom { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09); color: #fff; outline: none; transition: border-color 0.2s; }
     .input-custom:focus { border-color: #f59e0b; }
     #loginScreen { position: fixed; inset: 0; background: #0e0e10; z-index: 50; display: flex; align-items: center; justify-content: center; }
   </style>
@@ -42,56 +42,91 @@
       <a href="/" class="text-sm text-gray-400 hover:text-white underline">Volver a la calculadora</a>
     </header>
 
-    <form id="configForm" class="glass-card rounded-2xl p-6 space-y-6">
+    <form id="configForm" class="glass-card rounded-2xl p-6 space-y-6" onsubmit="event.preventDefault();">
       
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Precio Base ($)</label>
-          <input type="number" id="PRECIO_BASE" class="w-full input-custom rounded-xl px-4 py-3" required>
+      <!-- Sección: Globals -->
+      <div class="space-y-4">
+        <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest">⚙️ Parámetros Generales</h3>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Precio Base General ($)</label>
+            <input type="number" id="PRECIO_BASE" class="w-full input-custom rounded-xl px-4 py-3" required>
+          </div>
+          <div>
+            <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Precio por m³ ($)</label>
+            <input type="number" id="PRECIO_POR_M3" class="w-full input-custom rounded-xl px-4 py-3" required>
+          </div>
         </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Km Incluidos (Franquicia)</label>
+            <input type="number" id="KM_FRANQUICIA" class="w-full input-custom rounded-xl px-4 py-3" required>
+          </div>
+          <div>
+            <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Precio por Km Extra ($)</label>
+            <input type="number" id="PRECIO_POR_KM" class="w-full input-custom rounded-xl px-4 py-3" required>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Adicional 1 Peón ($)</label>
+            <input type="number" id="PRECIO_1_PEON" class="w-full input-custom rounded-xl px-4 py-3" required>
+          </div>
+          <div>
+            <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Adicional 2 Peones ($)</label>
+            <input type="number" id="PRECIO_2_PEONES" class="w-full input-custom rounded-xl px-4 py-3" required>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Inicio Recargo Nocturno (Hora)</label>
+            <input type="number" id="HORA_INICIO_NOCTURNO" class="w-full input-custom rounded-xl px-4 py-3" required>
+          </div>
+          <div>
+            <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Recargo Nocturno (%)</label>
+            <input type="number" id="PORCENTAJE_RECARGO_NOCTURNO" step="0.01" class="w-full input-custom rounded-xl px-4 py-3" required>
+            <span class="text-xs text-gray-500">Ej: 0.20 para 20%</span>
+          </div>
+        </div>
+
         <div>
-          <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Precio por m³ ($)</label>
-          <input type="number" id="PRECIO_POR_M3" class="w-full input-custom rounded-xl px-4 py-3" required>
+          <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Número de WhatsApp Destino</label>
+          <input type="text" id="TELEFONO_DESTINO" class="w-full input-custom rounded-xl px-4 py-3" placeholder="Ej: 5491135167226" required>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Km Incluidos (Franquicia)</label>
-          <input type="number" id="KM_FRANQUICIA" class="w-full input-custom rounded-xl px-4 py-3" required>
+      <!-- Sección: Gestión de Zonas -->
+      <div class="border-t border-gray-700 pt-6 space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest">🗺️ Zonas de Cobertura</h3>
+          <button type="button" onclick="agregarZona()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#f59e0b] text-[#000] hover:bg-amber-500 transition-colors">
+            + Agregar Zona
+          </button>
         </div>
-        <div>
-          <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Precio por Km Extra ($)</label>
-          <input type="number" id="PRECIO_POR_KM" class="w-full input-custom rounded-xl px-4 py-3" required>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Adicional 1 Peón ($)</label>
-          <input type="number" id="PRECIO_1_PEON" class="w-full input-custom rounded-xl px-4 py-3" required>
-        </div>
-        <div>
-          <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Adicional 2 Peones ($)</label>
-          <input type="number" id="PRECIO_2_PEONES" class="w-full input-custom rounded-xl px-4 py-3" required>
+        <p class="text-xs text-gray-500">Definí las zonas y sus precios base. La zona "No especificar" con precio vacío/cero usará el base general.</p>
+        
+        <div id="zonasContainer" class="space-y-2">
+          <!-- Filas de zonas se cargan aquí -->
         </div>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Inicio Recargo Nocturno (Hora)</label>
-          <input type="number" id="HORA_INICIO_NOCTURNO" class="w-full input-custom rounded-xl px-4 py-3" required>
+      <!-- Sección: Gestión del Catálogo -->
+      <div class="border-t border-gray-700 pt-6 space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest">📦 Catálogo de Objetos</h3>
+          <button type="button" onclick="agregarObjeto()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#f59e0b] text-[#000] hover:bg-amber-500 transition-colors">
+            + Agregar Objeto
+          </button>
         </div>
-        <div>
-          <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Recargo Nocturno (%)</label>
-          <input type="number" id="PORCENTAJE_RECARGO_NOCTURNO" step="0.01" class="w-full input-custom rounded-xl px-4 py-3" required>
-          <span class="text-xs text-gray-500">Ej: 0.20 para 20%</span>
+        <p class="text-xs text-gray-500">Definí los objetos, su volumen (m³), emoji e ID único (usá minúsculas, sin espacios ni caracteres especiales).</p>
+        
+        <div id="catalogoContainer" class="space-y-2">
+          <!-- Filas de objetos se cargan aquí -->
         </div>
-      </div>
-
-      <div class="border-t border-gray-700 pt-6">
-        <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Número de WhatsApp Destino</label>
-        <input type="text" id="TELEFONO_DESTINO" class="w-full input-custom rounded-xl px-4 py-3" placeholder="Ej: 5491135167226" required>
       </div>
 
       <button type="button" onclick="saveConfig()" id="saveBtn" class="w-full py-4 rounded-xl font-bold text-lg mt-4 transition-transform active:scale-95" style="background:#10b981; color:#000;">
@@ -104,7 +139,8 @@
 
   <script>
     const ADMIN_PASSWORD = "fletesadmin"; // Puedes cambiar esto después
-    let currentToken = "";
+    let zonasData = [];
+    let catalogoData = [];
 
     function checkPassword() {
       const pwd = document.getElementById('password').value;
@@ -121,21 +157,153 @@
       try {
         const res = await fetch('/config.json?t=' + new Date().getTime());
         const data = await res.json();
+        
+        // Cargar parámetros globales
         Object.keys(data).forEach(key => {
           if(document.getElementById(key)) {
             document.getElementById(key).value = data[key];
           }
         });
+
+        // Cargar listas
+        zonasData = data.ZONAS || [];
+        catalogoData = data.CATALOGO || [];
+
+        renderZonasList();
+        renderCatalogoList();
+
       } catch (err) {
         console.error("Error al cargar config", err);
         alert("Error cargando la configuración actual.");
       }
     }
 
+    function renderZonasList() {
+      const container = document.getElementById('zonasContainer');
+      container.innerHTML = '';
+      
+      zonasData.forEach((zona, idx) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/5';
+        row.innerHTML = `
+          <div class="flex-1">
+            <input type="text" value="${zona.nombre}" placeholder="Nombre de la Zona (ej: San Martín)" 
+                   class="zona-nombre w-full input-custom rounded-lg px-3 py-2 text-sm" required>
+          </div>
+          <div class="w-36">
+            <input type="number" value="${zona.precioBase !== null && zona.precioBase !== undefined ? zona.precioBase : ''}" placeholder="Precio Base (ej: 18000)" 
+                   class="zona-precio w-full input-custom rounded-lg px-3 py-2 text-sm text-center">
+          </div>
+          <button type="button" onclick="eliminarZona(${idx})" class="w-10 h-10 flex items-center justify-center rounded-lg bg-red-900/40 hover:bg-red-900 text-red-400 border border-red-500/20 text-sm flex-shrink-0">
+            🗑️
+          </button>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function renderCatalogoList() {
+      const container = document.getElementById('catalogoContainer');
+      container.innerHTML = '';
+      
+      catalogoData.forEach((obj, idx) => {
+        const row = document.createElement('div');
+        row.className = 'flex flex-col gap-2 sm:flex-row sm:items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/5';
+        row.innerHTML = `
+          <div class="w-12 self-start sm:self-auto flex-shrink-0">
+            <input type="text" value="${obj.emoji}" placeholder="🧊" 
+                   class="obj-emoji w-full input-custom rounded-lg px-3 py-2 text-sm text-center" maxlength="4" required>
+          </div>
+          <div class="flex-1">
+            <input type="text" value="${obj.nombre}" placeholder="Nombre (ej: Heladera)" 
+                   class="obj-nombre w-full input-custom rounded-lg px-3 py-2 text-sm" required>
+          </div>
+          <div class="w-24 flex-shrink-0">
+            <input type="number" step="0.01" value="${obj.m3}" placeholder="m³ (ej: 1.20)" 
+                   class="obj-m3 w-full input-custom rounded-lg px-3 py-2 text-sm text-center" required>
+          </div>
+          <div class="w-32 flex-shrink-0">
+            <input type="text" value="${obj.id}" placeholder="ID (ej: heladera)" 
+                   class="obj-id w-full input-custom rounded-lg px-3 py-2 text-sm text-center font-mono" required>
+          </div>
+          <button type="button" onclick="eliminarObjeto(${idx})" class="w-10 h-10 flex items-center justify-center rounded-lg bg-red-900/40 hover:bg-red-900 text-red-400 border border-red-500/20 text-sm flex-shrink-0 self-end sm:self-auto">
+            🗑️
+          </button>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function persistirInputsListas() {
+      // Zonas
+      const zonaRows = document.querySelectorAll('#zonasContainer > div');
+      zonasData = Array.from(zonaRows).map(row => {
+        const valStr = row.querySelector('.zona-precio').value;
+        const val = parseFloat(valStr);
+        return {
+          nombre: row.querySelector('.zona-nombre').value.trim(),
+          precioBase: isNaN(val) || valStr === '' ? null : val
+        };
+      });
+
+      // Catálogo
+      const objRows = document.querySelectorAll('#catalogoContainer > div');
+      catalogoData = Array.from(objRows).map(row => {
+        return {
+          emoji: row.querySelector('.obj-emoji').value.trim(),
+          nombre: row.querySelector('.obj-nombre').value.trim(),
+          m3: parseFloat(row.querySelector('.obj-m3').value) || 0.1,
+          id: row.querySelector('.obj-id').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '')
+        };
+      });
+    }
+
+    function agregarZona() {
+      persistirInputsListas();
+      zonasData.push({ nombre: '', precioBase: null });
+      renderZonasList();
+    }
+
+    function agregarObjeto() {
+      persistirInputsListas();
+      catalogoData.push({ id: '', emoji: '', nombre: '', m3: 0.5 });
+      renderCatalogoList();
+    }
+
+    function eliminarZona(idx) {
+      persistirInputsListas();
+      zonasData.splice(idx, 1);
+      renderZonasList();
+    }
+
+    function eliminarObjeto(idx) {
+      persistirInputsListas();
+      catalogoData.splice(idx, 1);
+      renderCatalogoList();
+    }
+
     async function saveConfig() {
       const btn = document.getElementById('saveBtn');
       const msg = document.getElementById('saveMsg');
       
+      persistirInputsListas();
+
+      // Validaciones básicas
+      const ids = catalogoData.map(o => o.id);
+      const duplicateIds = ids.filter((item, index) => ids.indexOf(item) !== index);
+      if (duplicateIds.length > 0) {
+        alert("Error: Hay objetos con el mismo ID (" + duplicateIds.join(", ") + "). Cada ID debe ser único.");
+        return;
+      }
+      if (catalogoData.some(o => !o.id || !o.nombre)) {
+        alert("Error: Todos los objetos del catálogo deben tener nombre e ID.");
+        return;
+      }
+      if (zonasData.some(z => !z.nombre)) {
+        alert("Error: Todas las zonas deben tener un nombre.");
+        return;
+      }
+
       const payload = {
         PRECIO_BASE: parseFloat(document.getElementById('PRECIO_BASE').value),
         PRECIO_POR_M3: parseFloat(document.getElementById('PRECIO_POR_M3').value),
@@ -145,7 +313,9 @@
         PRECIO_2_PEONES: parseFloat(document.getElementById('PRECIO_2_PEONES').value),
         HORA_INICIO_NOCTURNO: parseFloat(document.getElementById('HORA_INICIO_NOCTURNO').value),
         PORCENTAJE_RECARGO_NOCTURNO: parseFloat(document.getElementById('PORCENTAJE_RECARGO_NOCTURNO').value),
-        TELEFONO_DESTINO: document.getElementById('TELEFONO_DESTINO').value
+        TELEFONO_DESTINO: document.getElementById('TELEFONO_DESTINO').value,
+        ZONAS: zonasData,
+        CATALOGO: catalogoData
       };
 
       btn.innerText = "Guardando...";

@@ -327,6 +327,21 @@
     </div>
   </section>
 
+  <!-- ── SECCIÓN: ZONA DE COBERTURA ──────────────────── -->
+  <section class="glass-card rounded-2xl p-5 mb-5 space-y-4"
+           style="animation: slide-up 0.4s ease 0.05s both;">
+    <h2 class="text-xs font-bold tracking-[0.18em] uppercase flex items-center gap-2"
+        style="color:#64748b;">
+      <span>🗺️</span> Zona de Cobertura
+    </h2>
+    <div class="space-y-1.5">
+      <label for="zonaSeleccionada" class="text-xs font-bold uppercase tracking-widest block" style="color:#4b5563;">Zona de origen</label>
+      <select id="zonaSeleccionada" onchange="actualizarTotales()" class="input-custom w-full rounded-xl px-4 py-3.5 text-sm font-light">
+        <!-- Se autocompleta desde config.json -->
+      </select>
+    </div>
+  </section>
+
   <!-- ── SECCIÓN: DIRECCIONES ───────────────────────── -->
   <section class="glass-card rounded-2xl p-5 mb-5 space-y-4"
            style="animation: slide-up 0.4s ease 0.07s both;">
@@ -464,21 +479,42 @@
      JAVASCRIPT
 ══════════════════════════════════════════════════════ -->
 <script>
-/* ─────────────────────────────────────────────────────────────────
-   ⚙️  CONFIGURACIÓN DEL FLETERO
-   Editá solo este bloque para personalizar tarifas y teléfono.
-───────────────────────────────────────────────────────────────── */
 let CONFIG = {
   PRECIO_BASE: 15000, PRECIO_POR_M3: 8000, KM_FRANQUICIA: 40, PRECIO_POR_KM: 600,
   PRECIO_1_PEON: 12000, PRECIO_2_PEONES: 22000, HORA_INICIO_NOCTURNO: 20,
   PORCENTAJE_RECARGO_NOCTURNO: 0.20, TELEFONO_DESTINO: '5491135167226'
 };
 
+let ZONAS = [
+  { nombre: "No especificar", precioBase: null },
+  { nombre: "San Martín", precioBase: 18000 },
+  { nombre: "3 de febrero", precioBase: 19000 },
+  { nombre: "Vicente López", precioBase: 20000 },
+  { nombre: "San Isidro", precioBase: 22000 }
+];
+
+let CATALOGO = [
+  { id: 'heladera',   emoji: '🧊', nombre: 'Heladera con Freezer',     m3: 1.20 },
+  { id: 'sillon',     emoji: '🛋️', nombre: 'Sillón 2 Cuerpos',         m3: 1.50 },
+  { id: 'lavarropas', emoji: '🌀', nombre: 'Lavarropas / Secarropas',  m3: 0.60 },
+  { id: 'cama',       emoji: '🛏️', nombre: 'Cama 2 Plazas',            m3: 2.00 },
+  { id: 'mesa',       emoji: '🪑', nombre: 'Mesa de Comedor + Sillas', m3: 1.20 },
+  { id: 'cocina',     emoji: '🍳', nombre: 'Cocina / Horno',           m3: 0.60 },
+  { id: 'cajas',      emoji: '📦', nombre: 'Cajas Medianas / Grandes', m3: 0.15 }
+];
+
 // Cargar configuración desde el archivo JSON (editable por el panel admin)
 fetch('/config.json?t=' + new Date().getTime())
   .then(res => res.json())
   .then(data => {
     CONFIG = data;
+    if (data.ZONAS) ZONAS = data.ZONAS;
+    if (data.CATALOGO) CATALOGO = data.CATALOGO;
+
+    renderZonasSelect();
+    inicializarEstado();
+    renderCatalogo();
+
     // Actualizar la calculadora con los nuevos valores apenas terminan de descargar
     if (typeof actualizarTotales === 'function') {
       actualizarTotales();
@@ -486,32 +522,41 @@ fetch('/config.json?t=' + new Date().getTime())
   })
   .catch(err => {
     console.error("Error al cargar config.json, usando valores por defecto:", err);
+    renderZonasSelect();
   });
 
-/* ─────────────────────────────────────────────────────────────────
-   📦  CATÁLOGO DE OBJETOS — { id, emoji, nombre, m3 }
-───────────────────────────────────────────────────────────────── */
-const CATALOGO = [
-  { id: 'heladera',   emoji: '🧊', nombre: 'Heladera con Freezer',     m3: 1.20 },
-  { id: 'sillon',     emoji: '🛋️', nombre: 'Sillón 2 Cuerpos',         m3: 1.50 },
-  { id: 'lavarropas', emoji: '🌀', nombre: 'Lavarropas / Secarropas',  m3: 0.60 },
-  { id: 'cama',       emoji: '🛏️', nombre: 'Cama 2 Plazas',            m3: 2.00 },
-  { id: 'mesa',       emoji: '🪑', nombre: 'Mesa de Comedor + Sillas', m3: 1.20 },
-  { id: 'cocina',     emoji: '🍳', nombre: 'Cocina / Horno',           m3: 0.60 },
-  { id: 'cajas',      emoji: '📦', nombre: 'Cajas Medianas / Grandes', m3: 0.15 },
-];
+function renderZonasSelect() {
+  const select = document.getElementById('zonaSeleccionada');
+  if (!select) return;
+  select.innerHTML = '';
+  ZONAS.forEach(zona => {
+    const opt = document.createElement('option');
+    opt.value = zona.nombre === 'No especificar' ? 'none' : zona.nombre;
+    opt.textContent = zona.nombre + (zona.precioBase ? ` (Base: $${formatearPesos(zona.precioBase)})` : '');
+    opt.className = 'bg-[#18181c] text-white';
+    select.appendChild(opt);
+  });
+}
 
 /* ─────────────────────────────────────────────────────────────────
    🗂️  ESTADO — cantidades por item (reactive-lite)
 ───────────────────────────────────────────────────────────────── */
-const estado = {};
-CATALOGO.forEach(item => { estado[item.id] = 0; });
+let estado = {};
+function inicializarEstado() {
+  const viejoEstado = { ...estado };
+  estado = {};
+  CATALOGO.forEach(item => {
+    estado[item.id] = viejoEstado[item.id] || 0;
+  });
+}
 
 /* ─────────────────────────────────────────────────────────────────
    🎨  RENDERIZADO DE TARJETAS DE INVENTARIO
 ───────────────────────────────────────────────────────────────── */
 function renderCatalogo() {
   const container = document.getElementById('itemList');
+  if (!container) return;
+  container.innerHTML = ''; // Limpiar para permitir re-render dinámico
 
   CATALOGO.forEach((item, i) => {
     const card = document.createElement('div');
@@ -592,13 +637,24 @@ function actualizarTotales() {
     items   += q;
   });
 
+  // Obtener precio base según zona seleccionada
+  const selectZona = document.getElementById('zonaSeleccionada');
+  const zonaVal = selectZona ? selectZona.value : 'none';
+  let precioBaseViaje = CONFIG.PRECIO_BASE;
+  if (zonaVal && zonaVal !== 'none') {
+    const zona = ZONAS.find(z => z.nombre === zonaVal);
+    if (zona && zona.precioBase !== null && zona.precioBase !== undefined) {
+      precioBaseViaje = zona.precioBase;
+    }
+  }
+
   // 1. Kilómetros ingresados y recargo
   const kmInput   = parseFloat(document.getElementById('kilometros').value) || 0;
   const kmExtra   = Math.max(0, kmInput - CONFIG.KM_FRANQUICIA);
   const recargoKm = kmExtra * CONFIG.PRECIO_POR_KM;
 
   // Costo base viaje
-  let costoViaje = CONFIG.PRECIO_BASE + (volumen * CONFIG.PRECIO_POR_M3) + recargoKm;
+  let costoViaje = precioBaseViaje + (volumen * CONFIG.PRECIO_POR_M3) + recargoKm;
 
   // 2. Recargo nocturno (20% sobre costo viaje)
   const horaSeleccionada = parseInt(document.getElementById('horaServicio').value) || 6;
@@ -623,8 +679,8 @@ function actualizarTotales() {
   // Costo total
   const precio = costoViaje + recargoNocturno + costoPeones;
 
-  // Precio a mostrar (solo si hay interacción)
-  const precioMostrar = (items > 0 || kmInput > 0 || cantPeones > 0) ? precio : CONFIG.PRECIO_BASE;
+  // Precio a mostrar (solo si hay interacción o zona especificada)
+  const precioMostrar = (items > 0 || kmInput > 0 || cantPeones > 0 || (zonaVal && zonaVal !== 'none')) ? precio : precioBaseViaje;
 
   // ── Actualizar DOM ──────────────────────────────────────
   document.getElementById('totalVolumen').innerHTML =
@@ -677,6 +733,16 @@ function enviarWhatsApp() {
   const horaVal = parseInt(document.getElementById('horaServicio').value) || 6;
   const peones  = parseInt(document.getElementById('peones').value) || 0;
 
+  const selectZona = document.getElementById('zonaSeleccionada');
+  const zonaVal = selectZona ? selectZona.value : 'none';
+  let precioBaseViaje = CONFIG.PRECIO_BASE;
+  if (zonaVal && zonaVal !== 'none') {
+    const zona = ZONAS.find(z => z.nombre === zonaVal);
+    if (zona && zona.precioBase !== null && zona.precioBase !== undefined) {
+      precioBaseViaje = zona.precioBase;
+    }
+  }
+
   // --- Validaciones ---
   if (!nombreCompleto) {
     showAlert('👤', 'Por favor ingresá tu\nNombre Completo antes de continuar.');
@@ -714,7 +780,7 @@ function enviarWhatsApp() {
   const recargoKm = kmExtra * CONFIG.PRECIO_POR_KM;
   
   // Costo viaje base
-  let costoViaje = CONFIG.PRECIO_BASE + (volumen * CONFIG.PRECIO_POR_M3) + recargoKm;
+  let costoViaje = precioBaseViaje + (volumen * CONFIG.PRECIO_POR_M3) + recargoKm;
 
   // Nocturno
   let recargoNocturno = 0;
@@ -741,6 +807,9 @@ function enviarWhatsApp() {
     'Fecha/Hora: ' + dia + ' a las ' + horaVal.toString().padStart(2, '0') + ':00 hs' + (esNocturno ? ' (Recargo nocturno)' : ''),
     'Asistencia: ' + asCostoPeon
   ];
+  if (zonaVal && zonaVal !== 'none') {
+    lineasServicio.push('Zona origen: ' + zonaVal + ' (Base: $' + formatearPesos(precioBaseViaje) + ')');
+  }
 
   // --- Lineas opcionales de distancia ---
   if (kmInput > 0) {
@@ -920,6 +989,8 @@ function cambiarKm(delta) {
    🚀  INIT
 ───────────────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
+  inicializarEstado();
+  renderZonasSelect();
   renderCatalogo();
   actualizarTotales();
 });
