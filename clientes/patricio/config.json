@@ -1,0 +1,83 @@
+{
+  "PRECIO_BASE": 27000,
+  "PRECIO_POR_M3": 8000,
+  "KM_FRANQUICIA": 25,
+  "PRECIO_POR_KM": 1500,
+  "PRECIO_1_PEON": 12000,
+  "PRECIO_2_PEONES": 22000,
+  "HORA_INICIO_NOCTURNO": 20,
+  "PORCENTAJE_RECARGO_NOCTURNO": 0.2,
+  "TELEFONO_DESTINO": "5491135167226",
+  "ZONAS": [
+    {
+      "nombre": "No especificar",
+      "precioBase": null
+    },
+    {
+      "nombre": "San Martín",
+      "precioBase": 18000
+    },
+    {
+      "nombre": "3 de febrero",
+      "precioBase": 19000
+    },
+    {
+      "nombre": "Vicente López",
+      "precioBase": 20000
+    },
+    {
+      "nombre": "San Isidro",
+      "precioBase": 22000
+    }
+  ],
+  "CATALOGO": [
+    {
+      "emoji": "🧊",
+      "nombre": "Heladera con Freezer",
+      "m3": 1.2,
+      "id": "heladera"
+    },
+    {
+      "emoji": "🛋️",
+      "nombre": "Sillón 2 Cuerpos",
+      "m3": 1.5,
+      "id": "sillon"
+    },
+    {
+      "emoji": "🌀",
+      "nombre": "Lavarropas / Secarropas",
+      "m3": 0.6,
+      "id": "lavarropas"
+    },
+    {
+      "emoji": "🛏️",
+      "nombre": "Cama 2 Plazas",
+      "m3": 2,
+      "id": "cama"
+    },
+    {
+      "emoji": "🪑",
+      "nombre": "Mesa de Comedor + Sillas",
+      "m3": 1.2,
+      "id": "mesa"
+    },
+    {
+      "emoji": "🍳",
+      "nombre": "Cocina / Horno",
+      "m3": 0.6,
+      "id": "cocina"
+    },
+    {
+      "emoji": "📦",
+      "nombre": "Cajas Medianas / Grandes",
+      "m3": 0.15,
+      "id": "cajas"
+    },
+    {
+      "emoji": "📦",
+      "nombre": "Caja chica",
+      "m3": 0.2,
+      "id": "caja_chica"
+    }
+  ]
+}

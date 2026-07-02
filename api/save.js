@@ -20,7 +20,11 @@ export default async function handler(req, res) {
 
   const GITHUB_OWNER = 'valenruffo';
   const GITHUB_REPO = 'fletes_app';
-  const FILE_PATH = 'config.json';
+  
+  // Obtener cliente si es que se pasa como query param
+  const client = req.query.client || '';
+  const clientName = client.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  const FILE_PATH = clientName ? `clientes/${clientName}/config.json` : 'config.json';
   
   try {
     const newConfigStr = JSON.stringify(req.body, null, 2);
@@ -55,7 +59,7 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        message: 'Update config.json via Admin Panel',
+        message: clientName ? `Update config.json for client ${clientName} via Admin Panel` : 'Update config.json via Admin Panel',
         content: encodedContent,
         sha: sha || undefined
       })

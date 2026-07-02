@@ -1,0 +1,9 @@
+- [x] CENTRALIZAR API Y HACER RUTAS RELATIVAS
+  - [x] Modificar `api/save.js` para soportar query param `client`
+  - [x] Modificar root `index.html` para usar ruta relativa a `config.json`
+  - [x] Modificar root `admin.html` para usar ruta relativa a `config.json`, detectar `clientName` de la URL y mandarlo a la API
+- [x] CREAR PRIMER CLIENTE (Patricio)
+  - [x] Crear carpeta `clientes/patricio`
+  - [x] Copiar `index.html`, `admin.html` y `config.json` en ella
+- [x] VERIFICAR Y PUBLICAR
+  - [x] Testear y hacer push a GitHub
