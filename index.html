@@ -468,19 +468,23 @@
    ⚙️  CONFIGURACIÓN DEL FLETERO
    Editá solo este bloque para personalizar tarifas y teléfono.
 ───────────────────────────────────────────────────────────────── */
-const CONFIG = {
-  PRECIO_BASE:      15000,          // Costo fijo de arranque (ARS)
-  PRECIO_POR_M3:    8000,           // Precio por m³ de volumen (ARS)
-  KM_FRANQUICIA:    40,             // Km incluidos sin costo extra
-  PRECIO_POR_KM:    600,            // Precio por cada km adicional (ARS)
-  // --- Nuevas Tarifas de Peones ---
-  PRECIO_1_PEON:    12000,          // Adicional por 1 peón (ARS)
-  PRECIO_2_PEONES:  22000,          // Adicional por 2 peones (ARS)
-  // --- Horarios y Recargo Nocturno ---
-  HORA_INICIO_NOCTURNO: 20,         // A partir de qué hora (en 24h) aplica recargo nocturno
-  PORCENTAJE_RECARGO_NOCTURNO: 0.20, // 20% de recargo sobre el costo de viaje (base + m3 + km)
-  TELEFONO_DESTINO: '5491135167226' // WhatsApp destino (sin + ni espacios)
-};
+let CONFIG = {};
+
+// Cargar configuración desde el archivo JSON (editable por el panel admin)
+fetch('/config.json?t=' + new Date().getTime())
+  .then(res => res.json())
+  .then(data => {
+    CONFIG = data;
+  })
+  .catch(err => {
+    console.error("Error al cargar config.json, usando valores por defecto:", err);
+    // Valores de respaldo
+    CONFIG = {
+      PRECIO_BASE: 15000, PRECIO_POR_M3: 8000, KM_FRANQUICIA: 40, PRECIO_POR_KM: 600,
+      PRECIO_1_PEON: 12000, PRECIO_2_PEONES: 22000, HORA_INICIO_NOCTURNO: 20,
+      PORCENTAJE_RECARGO_NOCTURNO: 0.20, TELEFONO_DESTINO: '5491135167226'
+    };
+  });
 
 /* ─────────────────────────────────────────────────────────────────
    📦  CATÁLOGO DE OBJETOS — { id, emoji, nombre, m3 }

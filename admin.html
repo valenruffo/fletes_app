@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Administración - FleteYa</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { sora: ['Sora', 'sans-serif'] } } }
+    }
+  </script>
+  <style>
+    body { font-family: 'Sora', sans-serif; background: #0e0e10; color: #fff; }
+    .glass-card { background: rgba(34,34,40,0.75); border: 1px solid rgba(255,255,255,0.07); backdrop-filter: blur(12px); }
+    .input-custom { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09); color: #fff; outline: none; }
+    .input-custom:focus { border-color: #f59e0b; }
+    #loginScreen { position: fixed; inset: 0; background: #0e0e10; z-index: 50; display: flex; align-items: center; justify-content: center; }
+  </style>
+</head>
+<body class="min-h-screen p-4 sm:p-8">
+
+  <!-- Pantalla de Login -->
+  <div id="loginScreen">
+    <div class="glass-card rounded-2xl p-8 max-w-sm w-full space-y-6 text-center">
+      <div class="text-4xl">🔒</div>
+      <h2 class="text-xl font-bold">Acceso Restringido</h2>
+      <input type="password" id="password" class="w-full input-custom rounded-xl px-4 py-3 text-center tracking-widest" placeholder="Contraseña">
+      <button onclick="checkPassword()" class="w-full py-3 rounded-xl font-bold" style="background:#f59e0b; color:#000;">Ingresar</button>
+      <p id="loginError" class="text-red-500 text-sm hidden">Contraseña incorrecta</p>
+    </div>
+  </div>
+
+  <!-- Panel Principal -->
+  <div id="adminPanel" class="max-w-2xl mx-auto space-y-6 hidden">
+    <header class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-extrabold text-[#f59e0b]">Panel de Tarifas</h1>
+        <p class="text-sm text-gray-400">Actualizá los precios en vivo. Los cambios se guardan automáticamente.</p>
+      </div>
+      <a href="/" class="text-sm text-gray-400 hover:text-white underline">Volver a la calculadora</a>
+    </header>
+
+    <form id="configForm" class="glass-card rounded-2xl p-6 space-y-6">
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Precio Base ($)</label>
+          <input type="number" id="PRECIO_BASE" class="w-full input-custom rounded-xl px-4 py-3" required>
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Precio por m³ ($)</label>
+          <input type="number" id="PRECIO_POR_M3" class="w-full input-custom rounded-xl px-4 py-3" required>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Km Incluidos (Franquicia)</label>
+          <input type="number" id="KM_FRANQUICIA" class="w-full input-custom rounded-xl px-4 py-3" required>
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Precio por Km Extra ($)</label>
+          <input type="number" id="PRECIO_POR_KM" class="w-full input-custom rounded-xl px-4 py-3" required>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Adicional 1 Peón ($)</label>
+          <input type="number" id="PRECIO_1_PEON" class="w-full input-custom rounded-xl px-4 py-3" required>
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Adicional 2 Peones ($)</label>
+          <input type="number" id="PRECIO_2_PEONES" class="w-full input-custom rounded-xl px-4 py-3" required>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Inicio Recargo Nocturno (Hora)</label>
+          <input type="number" id="HORA_INICIO_NOCTURNO" class="w-full input-custom rounded-xl px-4 py-3" required>
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Recargo Nocturno (%)</label>
+          <input type="number" id="PORCENTAJE_RECARGO_NOCTURNO" step="0.01" class="w-full input-custom rounded-xl px-4 py-3" required>
+          <span class="text-xs text-gray-500">Ej: 0.20 para 20%</span>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-700 pt-6">
+        <label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Número de WhatsApp Destino</label>
+        <input type="text" id="TELEFONO_DESTINO" class="w-full input-custom rounded-xl px-4 py-3" placeholder="Ej: 5491135167226" required>
+      </div>
+
+      <button type="button" onclick="saveConfig()" id="saveBtn" class="w-full py-4 rounded-xl font-bold text-lg mt-4 transition-transform active:scale-95" style="background:#10b981; color:#000;">
+        Guardar y Publicar
+      </button>
+      <p id="saveMsg" class="text-center text-sm font-bold mt-2 hidden"></p>
+
+    </form>
+  </div>
+
+  <script>
+    const ADMIN_PASSWORD = "fletesadmin"; // Puedes cambiar esto después
+    let currentToken = "";
+
+    function checkPassword() {
+      const pwd = document.getElementById('password').value;
+      if (pwd === ADMIN_PASSWORD) {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+        loadConfig();
+      } else {
+        document.getElementById('loginError').classList.remove('hidden');
+      }
+    }
+
+    async function loadConfig() {
+      try {
+        const res = await fetch('/config.json?t=' + new Date().getTime());
+        const data = await res.json();
+        Object.keys(data).forEach(key => {
+          if(document.getElementById(key)) {
+            document.getElementById(key).value = data[key];
+          }
+        });
+      } catch (err) {
+        console.error("Error al cargar config", err);
+        alert("Error cargando la configuración actual.");
+      }
+    }
+
+    async function saveConfig() {
+      const btn = document.getElementById('saveBtn');
+      const msg = document.getElementById('saveMsg');
+      
+      const payload = {
+        PRECIO_BASE: parseFloat(document.getElementById('PRECIO_BASE').value),
+        PRECIO_POR_M3: parseFloat(document.getElementById('PRECIO_POR_M3').value),
+        KM_FRANQUICIA: parseFloat(document.getElementById('KM_FRANQUICIA').value),
+        PRECIO_POR_KM: parseFloat(document.getElementById('PRECIO_POR_KM').value),
+        PRECIO_1_PEON: parseFloat(document.getElementById('PRECIO_1_PEON').value),
+        PRECIO_2_PEONES: parseFloat(document.getElementById('PRECIO_2_PEONES').value),
+        HORA_INICIO_NOCTURNO: parseFloat(document.getElementById('HORA_INICIO_NOCTURNO').value),
+        PORCENTAJE_RECARGO_NOCTURNO: parseFloat(document.getElementById('PORCENTAJE_RECARGO_NOCTURNO').value),
+        TELEFONO_DESTINO: document.getElementById('TELEFONO_DESTINO').value
+      };
+
+      btn.innerText = "Guardando...";
+      btn.style.opacity = "0.7";
+      btn.disabled = true;
+      msg.classList.add('hidden');
+
+      try {
+        const res = await fetch('/api/save', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + document.getElementById('password').value
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await res.json();
+
+        if (res.ok) {
+          msg.innerText = "✅ Guardado con éxito. Los cambios tardarán ~30 segundos en reflejarse en la web.";
+          msg.style.color = "#10b981";
+        } else {
+          msg.innerText = "❌ Error: " + (result.error || "Fallo desconocido");
+          msg.style.color = "#ef4444";
+        }
+      } catch (error) {
+        msg.innerText = "❌ Error de conexión al guardar.";
+        msg.style.color = "#ef4444";
+      }
+
+      msg.classList.remove('hidden');
+      btn.innerText = "Guardar y Publicar";
+      btn.style.opacity = "1";
+      btn.disabled = false;
+    }
+  </script>
+</body>
+</html>
